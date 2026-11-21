@@ -1,0 +1,1346 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halden Factory Twin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#e30613; --red-d:#b8040f; --ink:#1d1f23; --muted:#6b7079; --soft:#9aa0a8;
+  --bg:#f2f3f5; --card:#fff; --line:#e8eaed; --chip:#f4f5f7;
+  --ok:#22a06b; --warn:#f0a020; --bad:#e5484d; --idle:#8e9bab;
+  --font:Inter,'IBM Plex Sans Arabic',system-ui,sans-serif;
+}
+[dir=ltr]{ --mid:calc(50vw - 117px); }
+[dir=rtl]{ --mid:calc(50vw + 117px); --font:'IBM Plex Sans Arabic',Inter,system-ui,sans-serif; }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;font-size:13px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+canvas#scene{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+.ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
+
+/* ---------- top bar ---------- */
+#top{position:fixed;top:0;left:0;right:0;height:56px;z-index:20;display:flex;align-items:center;gap:16px;padding:0 16px;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:18px;color:var(--red);letter-spacing:-.02em}
+.logo span{font-style:italic}
+[dir=rtl] .logo span{font-style:normal}
+.logo i{width:28px;height:28px;border-radius:7px;background:var(--red);color:#fff;display:grid;place-items:center;font-size:15px;font-style:italic;font-family:Inter,sans-serif}
+.plant{font-size:12px;color:var(--muted);font-weight:500;padding-inline-start:14px;border-inline-start:1px solid var(--line);white-space:nowrap}
+.kpis{display:flex;gap:6px;margin-inline-start:auto}
+.kchip{display:flex;flex-direction:column;padding:5px 11px;border-radius:7px;background:var(--chip);min-width:86px}
+.kchip span{font-size:10.5px;color:var(--muted);font-weight:500;white-space:nowrap}
+.kchip b{font-size:14px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.kchip.alert{background:#fdecee;cursor:pointer}.kchip.alert b{color:var(--red)}
+.clock{display:flex;align-items:center;gap:8px;padding-inline-start:12px;border-inline-start:1px solid var(--line)}
+.clock .time{font-weight:700;font-variant-numeric:tabular-nums;min-width:132px;white-space:nowrap}
+.seg{display:flex;background:var(--chip);border-radius:7px;padding:3px;direction:ltr}
+.seg button{padding:5px 9px;border-radius:5px;font-size:11.5px;font-weight:600;color:var(--muted)}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.lang{min-width:34px;height:30px;border-radius:7px;background:var(--ink);color:#fff;font-weight:700;font-size:12.5px;padding:0 9px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;border-radius:6px;background:var(--red);color:#fff;font-weight:600;font-size:12px;transition:background .15s;white-space:nowrap}
+.btn:hover{background:var(--red-d)}
+.btn.ghost{background:#fff;color:var(--red);box-shadow:inset 0 0 0 1.4px var(--red)}
+.btn.ghost:hover{background:#fff4f4}
+.btn.gray{background:var(--chip);color:var(--ink)}
+.btn.gray:hover{background:#e9eaed}
+.btn.sm{padding:4px 9px;font-size:11px}
+
+/* ---------- side rail ---------- */
+#rail{position:fixed;top:68px;inset-inline-start:12px;bottom:12px;width:206px;z-index:15;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);
+  border-radius:12px;box-shadow:0 10px 30px -14px rgba(20,22,30,.25);padding:10px;display:flex;flex-direction:column;gap:2px;overflow:auto}
+#rail h6{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);font-weight:700;padding:6px 8px 8px}
+.mod{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;text-align:start;font-weight:600;font-size:12.5px;transition:background .15s}
+.mod:hover{background:var(--chip)}
+.mod .n{width:24px;height:24px;border-radius:50%;background:var(--chip);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--muted);flex:none;transition:all .2s}
+.mod .badge{margin-inline-start:auto;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--red);color:#fff;font-size:10.5px;display:grid;place-items:center}
+.mod .badge:empty{display:none}
+.mod.on{background:#fdecee;color:var(--red)}
+.mod.on .n{background:var(--red);color:#fff}
+.rail-foot{margin-top:auto;padding:10px 8px 4px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.auto{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);font-weight:500;cursor:pointer}
+.tog{width:30px;height:17px;border-radius:9px;background:#d5d8dd;position:relative;transition:background .2s;flex:none;direction:ltr}
+.tog::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:transform .2s}
+.tog.on{background:var(--red)}.tog.on::after{transform:translateX(13px)}
+
+/* ---------- chapter pill ---------- */
+#chapter{position:fixed;top:72px;left:var(--mid);transform:translateX(-50%);z-index:12;display:flex;align-items:center;gap:9px;background:#fff;
+  padding:6px 6px 6px 16px;border-radius:30px;box-shadow:0 8px 24px -10px rgba(0,0,0,.25);font-weight:700;font-size:15px;white-space:nowrap}
+[dir=ltr] #chapter{padding:6px 16px 6px 6px}
+#chapter .n{width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:12.5px}
+
+/* ---------- panel ---------- */
+#panel{position:fixed;top:68px;inset-inline-end:12px;bottom:12px;width:440px;z-index:15;background:var(--card);border-radius:12px;
+  box-shadow:0 20px 50px -20px rgba(20,22,30,.3);display:flex;flex-direction:column;overflow:hidden}
+#panel .head{padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+#panel .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red);display:flex;align-items:center;gap:7px}
+#panel .eyebrow::before{content:"";width:16px;height:2px;background:var(--red)}
+#panel h2{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-top:6px}
+#panel .sub{color:var(--muted);font-size:12px;margin-top:3px;line-height:1.5}
+#body{flex:1;overflow:auto;padding:14px 18px 22px}
+.grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.tile{background:var(--chip);border-radius:9px;padding:10px 12px}
+.tile span{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.tile b{display:block;font-size:19px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+.tile em{font-style:normal;font-size:11px;font-weight:600}
+.ok{color:var(--ok)}.warn{color:#c27c00}.bad{color:var(--bad)}.idle{color:var(--idle)}
+.sec{margin-top:18px}
+.sec h4{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--soft);font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sec h4 small{text-transform:none;letter-spacing:0;font-weight:500;font-size:11px}
+.list{display:flex;flex-direction:column;gap:6px}
+.rowc{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--line);border-radius:9px}
+.rowc .main{flex:1;min-width:0}
+.rowc .t{font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rowc .s{font-size:11px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rowc.col{flex-direction:column;align-items:stretch}
+.rowc .line{display:flex;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;padding:3px 7px;border-radius:10px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:#e5f5ee}.pill.warn{background:#fdf3e1}.pill.bad{background:#fdecee}.pill.idle{background:#eef1f4}
+.bar{height:5px;border-radius:3px;background:#eceef1;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--red)}
+table.t{width:100%;border-collapse:collapse;font-size:11.5px}
+table.t th{text-align:start;font-weight:600;color:var(--soft);font-size:10.5px;padding:4px 4px 6px;border-bottom:1px solid var(--line)}
+table.t td{padding:6px 4px;border-bottom:1px solid #f1f2f4;white-space:nowrap;text-align:start}
+table.t td.r,table.t th.r{text-align:end}
+.heat{display:grid;gap:3px;font-size:10.5px}
+.heat div{height:20px;border-radius:4px;display:grid;place-items:center;color:#fff;font-weight:600}
+.heat .lab{background:none;color:var(--ink);justify-items:start;font-weight:600;white-space:nowrap;overflow:hidden;direction:ltr}
+[dir=rtl] .heat .lab{justify-items:end}
+.heat .hd{background:none;color:var(--soft)}
+.legend{display:flex;gap:12px;font-size:10.5px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:9px;height:9px;border-radius:3px}
+svg.chart{display:block;width:100%}
+[dir=rtl] svg.chart.flip{transform:scaleX(-1)}
+.note{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
+
+/* ---------- 3D labels ---------- */
+#labels{position:fixed;inset:0;pointer-events:none;z-index:8}
+.lab3{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;pointer-events:auto;cursor:pointer}
+.lab3 .chip{background:#fff;border-radius:14px;padding:4px 9px;font-size:11px;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px;
+  box-shadow:0 4px 14px -4px rgba(0,0,0,.22)}
+.lab3 .chip i{width:7px;height:7px;border-radius:50%;flex:none}
+.lab3 .stem{width:1.5px;height:14px;background:rgba(255,255,255,.9)}
+.zone .chip{padding:5px 5px 5px 11px;font-size:12px}
+[dir=ltr] .zone .chip{padding:5px 11px 5px 5px}
+.zone .chip b{width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:10.5px}
+.zone .chip em{font-style:normal;background:var(--red);color:#fff;border-radius:8px;padding:1px 6px;font-size:10px}
+.zone .stem{height:34px}
+.zone .dot{width:9px;height:9px;border-radius:50%;background:var(--red);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(227,6,19,.45)}70%{box-shadow:0 0 0 12px rgba(227,6,19,0)}100%{box-shadow:0 0 0 0 rgba(227,6,19,0)}}
+
+/* ---------- morning brief ---------- */
+#links{position:fixed;inset:0;z-index:9;pointer-events:none}
+#brief{position:fixed;top:118px;left:var(--mid);width:430px;transform:translateX(-50%);z-index:13;background:#1f2329;color:#fff;border-radius:14px;padding:16px 16px 12px;
+  box-shadow:0 24px 50px -18px rgba(0,0,0,.45)}
+#brief h3{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+#brief h3 i{width:8px;height:8px;border-radius:50%;background:var(--red)}
+#brief .s{font-size:11.5px;color:#a9b0ba;margin:3px 0 10px}
+.dec{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border-radius:9px;padding:9px 10px;margin-top:6px;cursor:pointer;transition:background .15s}
+.dec:hover{background:rgba(255,255,255,.12)}
+.dec .ck{width:18px;height:18px;border-radius:50%;border:1.6px solid #6b737e;flex:none;display:grid;place-items:center;font-size:11px}
+.dec.done .ck{background:var(--ok);border-color:var(--ok)}
+.dec.done .tx{text-decoration:line-through;opacity:.6}
+.dec .tx{flex:1;font-size:12.5px;font-weight:600}
+.dec .tx small{display:block;font-weight:400;color:#a9b0ba;font-size:11px;margin-top:1px}
+.dec .go{font-size:11px;color:#ff8b92;font-weight:600;white-space:nowrap}
+
+/* ---------- toasts ---------- */
+#toasts{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:30;display:flex;flex-direction:column;gap:6px;align-items:center}
+.toast{display:flex;align-items:center;gap:9px;background:#1f2329;color:#fff;padding:9px 14px;border-radius:9px;font-size:12px;font-weight:500;
+  box-shadow:0 10px 30px -10px rgba(0,0,0,.4);cursor:pointer;max-width:520px}
+.toast i{width:8px;height:8px;border-radius:50%;flex:none}
+
+.loader{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;transition:opacity .7s}
+.loader div{display:flex;flex-direction:column;align-items:center;gap:12px;font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.loader .b{width:140px;height:3px;background:#e2e4e8;border-radius:2px;overflow:hidden}
+.loader .b i{display:block;height:100%;width:40%;background:var(--red);animation:ld 1s infinite}
+@keyframes ld{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+
+@media (max-width:1180px){ .kpis .kchip:nth-child(n+3):not(.alert){display:none} .plant{display:none} }
+@media (max-width:900px){
+  :root,[dir=ltr],[dir=rtl]{--mid:50%}
+  #top{height:52px;gap:8px;padding:0 10px}
+  .kpis,.clock .time{display:none}
+  .clock{border:0;padding:0;margin-inline-start:auto}
+  #rail{top:58px;left:0;right:0;bottom:auto;width:auto;height:50px;flex-direction:row;border-radius:0;padding:6px 8px;overflow-x:auto;gap:4px}
+  #rail h6,.rail-foot{display:none}
+  .mod{flex:none;padding:6px 10px 6px 6px}
+  #panel{top:auto;left:0;right:0;bottom:0;width:auto;height:46vh;border-radius:14px 14px 0 0}
+  #chapter{top:116px;font-size:13px}
+  #brief{top:156px;width:calc(100vw - 32px)}
+  .lab3 .chip{font-size:10px}
+  #tourBtn{display:none}
+}
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="loader" id="loader"><div><span data-i="loading"></span><span class="b"><i></i></span></div></div>
+
+<header id="top">
+  <div class="logo"><i>H</i><span id="brandName"></span></div>
+  <div class="plant" id="plantName"></div>
+  <div class="kpis">
+    <div class="kchip"><span data-i="kOee"></span><b id="kOee">–</b></div>
+    <div class="kchip"><span data-i="kCash"></span><b id="kCash">–</b></div>
+    <div class="kchip"><span data-i="kDue"></span><b id="kDue">–</b></div>
+    <div class="kchip alert" id="kAlertsBox"><span data-i="kAlerts"></span><b id="kAlerts">–</b></div>
+  </div>
+  <div class="clock">
+    <span class="time" id="clock">–</span>
+    <div class="seg" id="speed"><button data-s="0">❚❚</button><button data-s="1" class="on">1×</button><button data-s="4">4×</button><button data-s="12">12×</button></div>
+    <button class="btn ghost sm" id="tourBtn"></button>
+    <button class="lang" id="langBtn" title="Language"></button>
+  </div>
+</header>
+
+<aside id="rail"><h6 data-i="modules"></h6><div id="mods"></div>
+  <div class="rail-foot">
+    <div class="auto" id="autoRow"><span class="tog on" id="autoTog"></span><span data-i="autopilot"></span></div>
+    <button class="btn gray sm" id="resetBtn" data-i="reset"></button>
+  </div>
+</aside>
+
+<div id="chapter"><span class="n" id="chN">1</span><span id="chT"></span></div>
+<section id="panel"><div class="head"><div class="eyebrow" id="pEy"></div><h2 id="pTitle"></h2><div class="sub" id="pSub"></div></div><div id="body"></div></section>
+<div id="labels"></div>
+<svg id="links"></svg>
+<div id="brief" style="display:none"></div>
+<div id="toasts"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+/* =====================================================================
+   CONFIG
+   ===================================================================== */
+const CFG = { brand:'Halden', brandAr:'هالدن', plant:'Halden Foods · 10th of Ramadan Plant', plantAr:'هالدن للأغذية · مصنع العاشر من رمضان', currency:'EGP', currencyAr:'ج.م', red:0xe30613 };
+const RED=CFG.red;
+const COL={ ok:0x22a06b, warn:0xf0a020, bad:0xe5484d, idle:0x9aa7b5, pend:0xd9dde3 };
+const HEX={ ok:'#22a06b', warn:'#f0a020', bad:'#e5484d', idle:'#8e9bab', red:'#e30613' };
+
+/* =====================================================================
+   LANGUAGE (Arabic / English)
+   ===================================================================== */
+let LANG = (()=>{ try{ return localStorage.getItem('twin-lang')||'ar'; }catch(e){ return 'ar'; } })();
+const AR = () => LANG==='ar';
+
+const T = {
+en:{
+  loading:'Loading plant twin', kOee:'Plant OEE', kCash:'Cash', kDue:'Orders due 24h', kAlerts:'Alerts', modules:'Modules',
+  autopilot:'Autopilot (auto-allocate & dispatch)', reset:'Reset simulation', tour:'▶ Tour', stop:'■ Stop', langBtn:'ع',
+  moduleOf:(i)=>`Module ${i} of 9`, day:'Day', h:'h', d:'d',
+  days:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+  inH:(n)=>`in ${n}h`, overdueD:(n)=>`${n}d overdue`, dayIn:(dn,n)=>`${dn} (${n}d)`,
+  m_manufacturing:'Manufacturing', s_manufacturing:'Lines, machines, work orders and the material each line needs next.',
+  m_qc:'QA & QC', s_qc:'Incoming lots, in-process checks and non-conformances.',
+  m_purchasing:'Purchasing & Importing', s_purchasing:'Inbound shipments, customs and who is running late.',
+  m_inventory:'Inventory', s_inventory:'Every item, week by week: what runs out, and what money is sleeping on the shelf.',
+  m_sales:'Sales', s_sales:'Orders, demand forecast and finished-goods availability.',
+  m_logistics:'Logistics & Distribution', s_logistics:'Dispatch dock, fleet and deliveries on their way to customers.',
+  m_hr:'HR', s_hr:'Shifts, attendance, overtime and staffing per line.',
+  m_finance:'Financial', s_finance:'Cash, margin, payables and receivables — live from operations.',
+  m_reports:'Reports', s_reports:'The whole plant from above, and the three decisions that matter this morning.',
+  // statuses
+  st_run:'Running', st_slow:'Slow', st_down:'Down', st_starved:'Starved', st_idle:'Paused',
+  inspecting:'Inspecting', onHold:'On hold', passed:'Passed', rejected:'Rejected', onTime:'On time', late:'Late', lateD:(n)=>`Late ${n}d`,
+  customs:'Customs', inCustoms:'in customs', ordered:'Ordered', atQC:'At QC', healthy:'Healthy', critPO:'Critical · PO open', lowPO:'Low · PO open', cleared:'Cleared',
+  so_new:'New', so_backorder:'Backorder', so_ready:'Ready', so_shipped:'Shipped', so_delivered:'Delivered',
+  short:'Short', full:'Full', onNow:'On now', off:'Off', overdue:'Overdue', open:'Open', okS:'OK', alertsN:(n)=>`${n} alert${n>1?'s':''}`,
+  // buttons
+  b_maint:'Send maintenance', b_pause:'Pause', b_resume:'Resume', b_inspect:'Inspect now', b_release:'Release', b_reject:'Reject', b_expedite:'Expedite (+4%)',
+  b_order:(q)=>`Order ${q}`, b_reorder:'Reorder', b_surplus:'Sell as surplus', b_allocate:'Allocate', b_sim:'+ Simulate order', b_dispatch:'Dispatch',
+  b_overtime:'Call overtime', b_pay:'Pay', b_remind:'Remind',
+  // manufacturing panel
+  t_oee:'Plant OEE', t_out24:'Output last 24h', units:'units', t_running:'Lines running', t_scrap:'Scrap rate', lines:'Lines',
+  mDownLeft:(m,h)=>`${m} down · ${h}h left`, waitingFor:(it)=>`Waiting for ${it}`, perHour:(a,b,c,d)=>`${a} / ${b} per hour · crew ${c}/${d}`, noWO:'No work order',
+  material:'Material', forDays:(it,x)=>`${it} for ${x}`, tenPlus:'10+ days', hrs:(n)=>`${n}h`, daysX:(n)=>`${n} days`,
+  plantOut:'Plant output · last 24h', woSched:'Work order schedule', th_wo:'WO', th_line:'Line', th_product:'Product', th_qty:'Qty', th_status:'Status', queued:'Queued',
+  // qc
+  t_fpy:'First-pass yield', t_lotsInsp:'Lots in inspection', t_hold:'On hold', t_ncr:'Open NCRs', incomingLots:'Incoming lots', noLots:'No lots in QC right now. Lots appear here when a purchase order arrives.',
+  pareto:'In-process defects · pareto', collecting:'Collecting data…', lineQ:'Line quality (last hour)', th_checks:'Checks', th_result:'Result', inSpec:'In spec', noRun:'No run',
+  ncrs:'Non-conformance reports', noNcr:'No open NCRs.', ncrLot:(n,l)=>`${n} · lot ${l}`, raised:'raised',
+  // purchasing
+  t_openPO:'Open POs', t_late:'Running late', t_customs:'In customs', t_spend:'Committed spend', inbound:'Inbound shipments', import:'import',
+  unloaded:'Unloaded, in inspection', eta:'ETA', wasDue:'was due', mrp:'Reorder suggestions (MRP)', itemsN:(n)=>`${n} items`,
+  coverLead:(c,l,o)=>`${c}d cover · lead ${l}d · on order ${o}`, nothingReorder:'Nothing to reorder — every item is covered through its lead time.',
+  scorecard:'Supplier scorecard', th_sup:'Supplier', th_origin:'Origin', th_lead:'Lead', th_ontime:'On-time',
+  // inventory
+  t_invVal:'Inventory value', t_below:'Below safe level', t_idleMoney:'Money idle on shelf', t_items:'Items tracked', heatT:'Inventory health · every item, week by week', wk:'W',
+  lg_cov:'Covered', lg_low:'Under 5 days', lg_out:'Runs out', lg_idle:'Idle money', stockList:'Stock list', noDemand:'no demand 90 days', daysCover:(c)=>`${c} days cover`, onOrderX:(n)=>`on order ${n}`,
+  fg:'Finished goods', th_onhand:'On hand', th_openOrders:'Open orders', th_value:'Value',
+  // sales
+  t_rev:'Revenue MTD', t_openOrd:'Open orders', t_backlog:'Order backlog', t_otif:'OTIF', demandT:'Demand · last 3 weeks + forecast', unitsDay:'units/day',
+  fcNote:(n)=>`Dashed line is the 7-day forecast (moving average with trend). Planned output is ${n} units/day.`, orders:'Orders', due:'due', salesByProd:'Sales by product · open book',
+  // logistics
+  t_ready:'Ready at dock', t_out:'Out for delivery', t_del24:'Delivered (24h)', t_otd:'On-time delivery', fleet:(a,b)=>`Fleet · ${a}/${b} trucks free`, readyDisp:'Ready to dispatch',
+  route:(r)=>r==='east'?'east route':'south route', dockClear:'Dock is clear.', onRoad:'Deliveries on the road', noTrucksOut:'No trucks out.', routes:'Routes',
+  th_route:'Route', th_onroad:'On road', th_transit:'Avg transit', r_east:'East · Cairo & Delta', r_south:'South · Giza & Upper Egypt',
+  // hr
+  t_head:'Headcount', t_floor:'On the floor now', shiftX:(s)=>`Shift ${s}`, t_abs:'Absence today', t_ot:'Overtime hours MTD', crewT:(s)=>`Crew per line · shift ${s}`,
+  presentOf:(p,pl,f)=>`${p} present of ${pl} planned · output ${f}% of rate`, shiftPat:'Shift pattern', th_shift:'Shift', th_hours:'Hours', th_planned:'Planned',
+  certs:'Certifications expiring', t_safety:'Days without lost-time injury', t_roles:'Open roles',
+  // finance
+  t_cash:'Cash', t_gm:'Gross margin', t_ar:'Receivables (AR)', t_ap:'Payables (AP)', cashT:'Cash position · last 30 days', pnl:'P&L month to date',
+  pl_rev:'Revenue', pl_cogs:'Cost of goods', pl_gp:'Gross profit', pl_lab:'Labour', pl_oh:'Overheads', pl_op:'Operating profit',
+  apT:'Supplier invoices to pay', allPaid:'All paid.', arT:'Customer invoices to collect', nothingOut:'Nothing outstanding.', remSent:(n)=>`${n} reminder${n>1?'s':''} sent`,
+  // reports
+  t_alerts:'Open alerts', statusBy:'Plant status by module', clickNote:'Click a row, a pin on the map, or a decision in the brief to jump to that area.',
+  dl:'Download reports (CSV)', rep:[['production','Daily production report','Output per line and work order status'],['inventory','Inventory valuation','Every SKU, quantity, value and days of cover'],['suppliers','Supplier performance','Open POs, delays and on-time rates'],['sales','Sales & orders','Open order book and delivery status'],['finance','P&L and cash','Month-to-date P&L, AR and AP']],
+  log:'Activity log',
+  // labels
+  lb_late:(n)=>`late ${n}d`, lb_customsW:(n)=>`Customs · ${n} waiting`, lb_runsOut:(w)=>`runs out ${w}`, lb_idle:(m)=>`${m} idle on shelf`,
+  lb_mDown:(m)=>`${m} down`, lb_short:(it)=>`short: ${it}`, lb_paused:'paused', lb_perH:(n)=>`${n}/h`, lb_stock:(n)=>`${n} in stock`, lb_bo:(n)=>`${n} backorder`,
+  lb_order:(c)=>`${c} order`, lb_ready:(n)=>`${n} ready at dock`, lb_onShift:(p,a)=>`${p} on shift · ${a} absent`, lb_crew:(id,a,b)=>`${id} crew ${a}/${b}`,
+  lb_cash:(m)=>`Cash ${m}`, lb_apOver:(m)=>`${m} payables overdue`, lb_arOver:(m)=>`${m} receivables overdue`,
+  // brief
+  briefT:'Morning brief', briefS:'the 3 decisions that matter today', doIt:'Do it →', openIt:'Open →',
+  br_protect:(s,w)=>`Protect ${s}: stock runs out ${w}`, br_protectS:(po,w,c)=>`${po} lands ${w} · ${c} days cover`,
+  br_order:(s,d)=>`Order ${s} before ${d}`, br_orderS:(c,l)=>`${c} days cover, ${l}-day lead time`,
+  br_chase:(po,s)=>`Chase ${po} with ${s}`, br_chaseS:(it,d,c)=>`${it} · ${d}d late${c?' at customs':''}`,
+  br_down:(l)=>`Get ${l} running again`, br_downS:(m,h)=>`${m} down · ${h}h estimated`,
+  br_secure:(s,l)=>`Secure ${s} for ${l}`, br_secureS:(w)=>`Line stops ${w} without it`,
+  br_lot:(id,it)=>`Decide on lot ${id} (${it})`, br_dead:(m)=>`Free ${m} sleeping on the shelf`, br_deadS:'Obsolete cans and labels, no demand in 90 days',
+  br_ap:(n)=>`Pay ${n} overdue supplier invoice${n>1?'s':''}`,
+  // events
+  ev:{
+    shiftStart:(s,n)=>`Shift ${s} started · ${n} on the floor`, understaffed:(l)=>`${lname(l)} is understaffed this shift`,
+    poDelayed:(id,c,sku)=>`${id} delayed ${c?'at customs':'in transit'} · ${iname(sku)}`, poCustoms:(id,sku)=>`${id} reached customs · ${iname(sku)}`,
+    poArrived:(id,lot)=>`${id} arrived at receiving → lot ${lot} sent to QC`, lotHold:(lot,sku,r)=>`Lot ${lot} (${iname(sku)}) on QC hold · ${reason(r)}`,
+    lotRejected:(lot)=>`Lot ${lot} rejected · replacement PO raised`, lineUp:(l)=>`${lname(l)} back up`, machineDown:(l,m,h)=>`${mname(l,m)} down on ${lname(l)} · est. ${h}h`,
+    lineStopped:(l,sku)=>`${lname(l)} stopped · out of ${iname(sku)}`, newOrder:(id,c,q,p)=>`New order ${id} · ${cname(c)} · ${q} × ${pname(p)}`,
+    delivered:(id,c,late)=>`${id} delivered to ${cname(c)} · ${late?'late':'on time'}`, paid:(c,a)=>`${cname(c)} paid ${money(a)}`,
+    autoPO:(id,sku,c)=>`Autopilot raised ${id} · ${iname(sku)} (${c}d cover)`, allocated:(id)=>`${id} allocated · ready to ship`,
+    backordered:(id,p)=>`${id} backordered · not enough ${pname(p)}`, dispatched:(id,c,tr)=>`${id} dispatched to ${cname(c)} on ${tr}`,
+    paySup:(auto,s,a)=>`${auto?'Auto-paid':'Paid'} ${sname(s)} ${money(a)}`, poRaised:(id,q,sku,s)=>`${id} raised · ${q} ${uom(sku)} ${iname(sku)} from ${sname(s)}`,
+    expedited:(id,f)=>`${id} expedited · fee ${money(f)}`, released:(id)=>`Lot ${id} released under concession`, rejectedRepl:(id,po)=>`Lot ${id} rejected · ${po} raised as replacement`,
+    maint:(l)=>`Maintenance dispatched to ${lname(l)}`, paused:(l,p)=>`${lname(l)} ${p?'paused':'resumed'}`, liquidated:(sku,a)=>`Sold ${iname(sku)} as surplus · ${money(a)} recovered`,
+    overtime:()=>'Overtime called · all lines fully staffed this shift',
+  },
+  noTrucks:'No trucks free — wait for one to return', inspectFront:(id)=>`Lot ${id} moved to front of inspection queue`, reminder:(c)=>`Reminder sent to ${cname(c)}`,
+  autoOn:'Autopilot on', autoOff:'Autopilot off', resetDone:'Simulation reset', tip:'Tip: press ▶ Tour, or pick a module. Buttons in the panel change the plant.',
+},
+ar:{
+  loading:'جارٍ تحميل المصنع', kOee:'كفاءة المصنع OEE', kCash:'النقدية', kDue:'طلبات خلال 24 ساعة', kAlerts:'تنبيهات', modules:'الوحدات',
+  autopilot:'الطيار الآلي (تخصيص وشحن تلقائي)', reset:'إعادة تشغيل المحاكاة', tour:'▶ جولة', stop:'■ إيقاف', langBtn:'EN',
+  moduleOf:(i)=>`الوحدة ${i} من 9`, day:'اليوم', h:'س', d:'يوم',
+  days:['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],
+  inH:(n)=>`خلال ${n} س`, overdueD:(n)=>`متأخر ${n} يوم`, dayIn:(dn,n)=>`${dn} (${n} يوم)`,
+  m_manufacturing:'التصنيع', s_manufacturing:'خطوط الإنتاج والماكينات وأوامر التشغيل، والخامة التي يحتاجها كل خط بعد ذلك.',
+  m_qc:'الجودة QA و QC', s_qc:'الدفعات الواردة، فحوص أثناء التشغيل، وتقارير عدم المطابقة.',
+  m_purchasing:'المشتريات والاستيراد', s_purchasing:'الشحنات الواردة والجمارك، ومن المتأخر منها.',
+  m_inventory:'المخزون', s_inventory:'كل صنف أسبوعًا بأسبوع: ما الذي سينفد، وما الأموال النائمة على الرف.',
+  m_sales:'المبيعات', s_sales:'الطلبات وتوقع الطلب وتوفر المنتج التام.',
+  m_logistics:'اللوجستيات والتوزيع', s_logistics:'رصيف الشحن والأسطول والشحنات في طريقها إلى العملاء.',
+  m_hr:'الموارد البشرية', s_hr:'الورديات والحضور والعمل الإضافي والعمالة لكل خط.',
+  m_finance:'المالية', s_finance:'النقدية والهامش ومستحقات الموردين والعملاء — مباشرة من التشغيل.',
+  m_reports:'التقارير', s_reports:'المصنع كله من فوق، وأهم ثلاثة قرارات هذا الصباح.',
+  st_run:'يعمل', st_slow:'بطيء', st_down:'عطل', st_starved:'نقص خامة', st_idle:'متوقف',
+  inspecting:'قيد الفحص', onHold:'موقوفة', passed:'مقبولة', rejected:'مرفوضة', onTime:'في الميعاد', late:'متأخر', lateD:(n)=>`متأخر ${n} يوم`,
+  customs:'الجمارك', inCustoms:'في الجمارك', ordered:'تم الطلب', atQC:'في الجودة', healthy:'سليم', critPO:'حرج · أمر شراء مفتوح', lowPO:'منخفض · أمر شراء مفتوح', cleared:'تمت التصفية',
+  so_new:'جديد', so_backorder:'مؤجل', so_ready:'جاهز', so_shipped:'تم الشحن', so_delivered:'تم التسليم',
+  short:'ناقص', full:'مكتمل', onNow:'الآن', off:'خارج', overdue:'متأخر', open:'مفتوح', okS:'سليم', alertsN:(n)=>`${n} تنبيه`,
+  b_maint:'إرسال صيانة', b_pause:'إيقاف مؤقت', b_resume:'استئناف', b_inspect:'افحص الآن', b_release:'إفراج', b_reject:'رفض', b_expedite:'تسريع (+4%)',
+  b_order:(q)=>`اطلب ${q}`, b_reorder:'إعادة طلب', b_surplus:'بيع كفائض', b_allocate:'تخصيص', b_sim:'+ طلب تجريبي', b_dispatch:'شحن',
+  b_overtime:'طلب عمل إضافي', b_pay:'ادفع', b_remind:'تذكير',
+  t_oee:'كفاءة المصنع OEE', t_out24:'الإنتاج آخر 24 ساعة', units:'وحدة', t_running:'خطوط تعمل', t_scrap:'نسبة الهالك', lines:'الخطوط',
+  mDownLeft:(m,h)=>`${m} متوقفة · باقي ${h} س`, waitingFor:(it)=>`في انتظار ${it}`, perHour:(a,b,c,d)=>`${a} / ${b} في الساعة · الطاقم ${c}/${d}`, noWO:'لا يوجد أمر تشغيل',
+  material:'الخامة', forDays:(it,x)=>`${it} تكفي ${x}`, tenPlus:'أكثر من 10 أيام', hrs:(n)=>`${n} س`, daysX:(n)=>`${n} يوم`,
+  plantOut:'إنتاج المصنع · آخر 24 ساعة', woSched:'جدول أوامر التشغيل', th_wo:'الأمر', th_line:'الخط', th_product:'المنتج', th_qty:'الكمية', th_status:'الحالة', queued:'في الانتظار',
+  t_fpy:'نسبة القبول من أول مرة', t_lotsInsp:'دفعات قيد الفحص', t_hold:'موقوفة', t_ncr:'تقارير عدم مطابقة', incomingLots:'الدفعات الواردة', noLots:'لا توجد دفعات في الجودة الآن. تظهر هنا عند وصول أمر شراء.',
+  pareto:'عيوب أثناء التشغيل · باريتو', collecting:'جارٍ جمع البيانات…', lineQ:'جودة الخطوط (آخر ساعة)', th_checks:'فحوص', th_result:'النتيجة', inSpec:'مطابق', noRun:'لا تشغيل',
+  ncrs:'تقارير عدم المطابقة', noNcr:'لا توجد تقارير مفتوحة.', ncrLot:(n,l)=>`${n} · دفعة ${l}`, raised:'صدر',
+  t_openPO:'أوامر شراء مفتوحة', t_late:'متأخرة', t_customs:'في الجمارك', t_spend:'الإنفاق الملتزم به', inbound:'الشحنات الواردة', import:'استيراد',
+  unloaded:'تم التفريغ، قيد الفحص', eta:'الوصول', wasDue:'كان مستحقًا', mrp:'اقتراحات إعادة الطلب (MRP)', itemsN:(n)=>`${n} صنف`,
+  coverLead:(c,l,o)=>`تغطية ${c} يوم · توريد ${l} يوم · مطلوب ${o}`, nothingReorder:'لا يوجد ما يُطلب — كل صنف مغطى طوال مدة توريده.',
+  scorecard:'تقييم الموردين', th_sup:'المورد', th_origin:'البلد', th_lead:'التوريد', th_ontime:'الالتزام',
+  t_invVal:'قيمة المخزون', t_below:'تحت الحد الآمن', t_idleMoney:'أموال نائمة على الرف', t_items:'أصناف متابعة', heatT:'صحة المخزون · كل صنف أسبوعًا بأسبوع', wk:'أ',
+  lg_cov:'مغطى', lg_low:'أقل من 5 أيام', lg_out:'ينفد', lg_idle:'أموال نائمة', stockList:'قائمة الأصناف', noDemand:'بلا طلب منذ 90 يومًا', daysCover:(c)=>`تغطية ${c} يوم`, onOrderX:(n)=>`مطلوب ${n}`,
+  fg:'المنتج التام', th_onhand:'المتاح', th_openOrders:'طلبات مفتوحة', th_value:'القيمة',
+  t_rev:'الإيراد منذ بداية الشهر', t_openOrd:'طلبات مفتوحة', t_backlog:'قيمة الطلبات المتأخرة', t_otif:'التسليم الكامل في الميعاد', demandT:'الطلب · آخر 3 أسابيع + التوقع', unitsDay:'وحدة/يوم',
+  fcNote:(n)=>`الخط المتقطع هو توقع 7 أيام (متوسط متحرك مع الاتجاه). الإنتاج المخطط ${n} وحدة/يوم.`, orders:'الطلبات', due:'مستحق', salesByProd:'المبيعات حسب المنتج · الطلبات المفتوحة',
+  t_ready:'جاهز على الرصيف', t_out:'في الطريق', t_del24:'تم تسليمه (24 س)', t_otd:'التسليم في الميعاد', fleet:(a,b)=>`الأسطول · ${a}/${b} شاحنة متاحة`, readyDisp:'جاهز للشحن',
+  route:(r)=>r==='east'?'مسار الشرق':'مسار الجنوب', dockClear:'الرصيف فاضي.', onRoad:'شحنات في الطريق', noTrucksOut:'لا توجد شاحنات بالخارج.', routes:'المسارات',
+  th_route:'المسار', th_onroad:'في الطريق', th_transit:'متوسط الرحلة', r_east:'الشرق · القاهرة والدلتا', r_south:'الجنوب · الجيزة والصعيد',
+  t_head:'عدد العاملين', t_floor:'في الصالة الآن', shiftX:(s)=>`الوردية ${s}`, t_abs:'الغياب اليوم', t_ot:'ساعات إضافية منذ بداية الشهر', crewT:(s)=>`الطاقم لكل خط · الوردية ${s}`,
+  presentOf:(p,pl,f)=>`${p} حاضر من ${pl} مخطط · الإنتاج ${f}% من المعدل`, shiftPat:'نظام الورديات', th_shift:'الوردية', th_hours:'المواعيد', th_planned:'المخطط',
+  certs:'شهادات قاربت على الانتهاء', t_safety:'أيام بدون إصابة عمل', t_roles:'وظائف شاغرة',
+  t_cash:'النقدية', t_gm:'هامش الربح الإجمالي', t_ar:'مستحقات من العملاء', t_ap:'مستحقات للموردين', cashT:'رصيد النقدية · آخر 30 يومًا', pnl:'الأرباح والخسائر منذ بداية الشهر',
+  pl_rev:'الإيرادات', pl_cogs:'تكلفة البضاعة', pl_gp:'مجمل الربح', pl_lab:'الأجور', pl_oh:'المصروفات العامة', pl_op:'ربح التشغيل',
+  apT:'فواتير موردين للدفع', allPaid:'كل الفواتير مدفوعة.', arT:'فواتير عملاء للتحصيل', nothingOut:'لا توجد مستحقات.', remSent:(n)=>`أُرسل ${n} تذكير`,
+  t_alerts:'تنبيهات مفتوحة', statusBy:'حالة المصنع حسب الوحدة', clickNote:'اضغط على صف أو دبوس على الخريطة أو قرار في الموجز للانتقال إليه.',
+  dl:'تنزيل التقارير (CSV)', rep:[['production','تقرير الإنتاج اليومي','الإنتاج لكل خط وحالة أوامر التشغيل'],['inventory','تقييم المخزون','كل صنف بالكمية والقيمة وأيام التغطية'],['suppliers','أداء الموردين','أوامر الشراء المفتوحة والتأخير ونسب الالتزام'],['sales','المبيعات والطلبات','الطلبات المفتوحة وحالة التسليم'],['finance','الأرباح والنقدية','الأرباح والخسائر والمستحقات منذ بداية الشهر']],
+  log:'سجل الأحداث',
+  lb_late:(n)=>`متأخر ${n} يوم`, lb_customsW:(n)=>`الجمارك · ${n} في الانتظار`, lb_runsOut:(w)=>`ينفد ${w}`, lb_idle:(m)=>`${m} نائمة على الرف`,
+  lb_mDown:(m)=>`${m} متوقفة`, lb_short:(it)=>`نقص: ${it}`, lb_paused:'متوقف', lb_perH:(n)=>`${n}/س`, lb_stock:(n)=>`${n} بالمخزن`, lb_bo:(n)=>`${n} مؤجل`,
+  lb_order:(c)=>`طلبية ${c}`, lb_ready:(n)=>`${n} جاهز على الرصيف`, lb_onShift:(p,a)=>`${p} في الوردية · ${a} غائب`, lb_crew:(id,a,b)=>`طاقم ${id} ${a}/${b}`,
+  lb_cash:(m)=>`النقدية ${m}`, lb_apOver:(m)=>`${m} مستحقات موردين متأخرة`, lb_arOver:(m)=>`${m} مستحقات عملاء متأخرة`,
+  briefT:'موجز الصباح', briefS:'أهم 3 قرارات النهارده', doIt:'نفّذ ←', openIt:'افتح ←',
+  br_protect:(s,w)=>`احمِ ${s}: المخزون ينفد ${w}`, br_protectS:(po,w,c)=>`${po} يصل ${w} · تغطية ${c} يوم`,
+  br_order:(s,d)=>`اطلب ${s} قبل ${d}`, br_orderS:(c,l)=>`تغطية ${c} يوم، ومدة التوريد ${l} يوم`,
+  br_chase:(po,s)=>`تابع ${po} مع ${s}`, br_chaseS:(it,d,c)=>`${it} · متأخر ${d} يوم${c?' في الجمارك':''}`,
+  br_down:(l)=>`أعِد تشغيل ${l}`, br_downS:(m,h)=>`${m} متوقفة · متوقع ${h} س`,
+  br_secure:(s,l)=>`أمِّن ${s} لـ${l}`, br_secureS:(w)=>`الخط يقف ${w} بدونها`,
+  br_lot:(id,it)=>`قرّر بشأن الدفعة ${id} (${it})`, br_dead:(m)=>`حرّر ${m} نائمة على الرف`, br_deadS:'علب وملصقات متقادمة، بلا طلب منذ 90 يومًا',
+  br_ap:(n)=>`ادفع ${n} فاتورة موردين متأخرة`,
+  ev:{
+    shiftStart:(s,n)=>`بدأت الوردية ${s} · ${n} في الصالة`, understaffed:(l)=>`${lname(l)} ناقص عمالة في هذه الوردية`,
+    poDelayed:(id,c,sku)=>`${id} متأخر ${c?'في الجمارك':'في الطريق'} · ${iname(sku)}`, poCustoms:(id,sku)=>`${id} وصل الجمارك · ${iname(sku)}`,
+    poArrived:(id,lot)=>`${id} وصل الاستلام ← الدفعة ${lot} للجودة`, lotHold:(lot,sku,r)=>`الدفعة ${lot} (${iname(sku)}) موقوفة بالجودة · ${reason(r)}`,
+    lotRejected:(lot)=>`رُفضت الدفعة ${lot} · صدر أمر شراء بديل`, lineUp:(l)=>`${lname(l)} عاد للعمل`, machineDown:(l,m,h)=>`${mname(l,m)} متوقفة على ${lname(l)} · متوقع ${h} س`,
+    lineStopped:(l,sku)=>`${lname(l)} توقف · نفد ${iname(sku)}`, newOrder:(id,c,q,p)=>`طلب جديد ${id} · ${cname(c)} · ${q} × ${pname(p)}`,
+    delivered:(id,c,late)=>`${id} تم تسليمه إلى ${cname(c)} · ${late?'متأخر':'في الميعاد'}`, paid:(c,a)=>`${cname(c)} دفع ${money(a)}`,
+    autoPO:(id,sku,c)=>`الطيار الآلي أصدر ${id} · ${iname(sku)} (تغطية ${c} يوم)`, allocated:(id)=>`${id} تم تخصيصه · جاهز للشحن`,
+    backordered:(id,p)=>`${id} مؤجل · لا يكفي ${pname(p)}`, dispatched:(id,c,tr)=>`${id} خرج إلى ${cname(c)} على ${tr}`,
+    paySup:(auto,s,a)=>`${auto?'دفع تلقائي':'تم دفع'} ${money(a)} إلى ${sname(s)}`, poRaised:(id,q,sku,s)=>`صدر ${id} · ${q} ${uom(sku)} ${iname(sku)} من ${sname(s)}`,
+    expedited:(id,f)=>`تم تسريع ${id} · رسوم ${money(f)}`, released:(id)=>`أُفرج عن الدفعة ${id} باستثناء`, rejectedRepl:(id,po)=>`رُفضت الدفعة ${id} · صدر ${po} بديلًا`,
+    maint:(l)=>`تم إرسال الصيانة إلى ${lname(l)}`, paused:(l,p)=>`${lname(l)} ${p?'متوقف مؤقتًا':'استأنف العمل'}`, liquidated:(sku,a)=>`بيع ${iname(sku)} كفائض · استرداد ${money(a)}`,
+    overtime:()=>'تم طلب عمل إضافي · كل الخطوط مكتملة العمالة في هذه الوردية',
+  },
+  noTrucks:'لا توجد شاحنات متاحة — انتظر عودة إحداها', inspectFront:(id)=>`الدفعة ${id} في أول طابور الفحص`, reminder:(c)=>`تم إرسال تذكير إلى ${cname(c)}`,
+  autoOn:'الطيار الآلي يعمل', autoOff:'الطيار الآلي متوقف', resetDone:'تمت إعادة تشغيل المحاكاة', tip:'جرّب ▶ جولة أو اختر وحدة. أزرار اللوحة تغيّر حالة المصنع.',
+}};
+function t(k,...a){ const v=(T[LANG][k]!==undefined?T[LANG][k]:T.en[k]); return typeof v==='function'?v(...a):v; }
+
+const MODULES=[
+  {key:'manufacturing', cam:[-5,12,0.85]},
+  {key:'qc',            cam:[-54,-24,1.05]},
+  {key:'purchasing',    cam:[-128,-60,0.4]},
+  {key:'inventory',     cam:[-15,-30,1.45]},
+  {key:'sales',         cam:[47,-26,1.1]},
+  {key:'logistics',     cam:[112,52,0.6]},
+  {key:'hr',            cam:[-56,36,1.0]},
+  {key:'finance',       cam:[-30,44,1.05]},
+  {key:'reports',       cam:[0,-14,0.28]},
+];
+const mN=k=>t('m_'+k), mS=k=>t('s_'+k);
+
+/* =====================================================================
+   MASTER DATA (bilingual)
+   ===================================================================== */
+const SUPPLIERS={
+  S1:{en:'Delta Dairy Ingredients', ar:'دلتا لمكونات الألبان', country:'EG', lead:2, imp:false},
+  S2:{en:'NordCulture ApS',         ar:'نورد كالتشر',          country:'DK', lead:12,imp:true},
+  S3:{en:'Nile Packaging',          ar:'النيل للتعبئة والتغليف',country:'EG', lead:3, imp:false},
+  S4:{en:'Suez Metal Cans',         ar:'السويس للعلب المعدنية', country:'EG', lead:4, imp:false},
+  S5:{en:'Valencia Agro',           ar:'فالنسيا أجرو',         country:'ES', lead:14,imp:true},
+  S6:{en:'Andhra Fruit Pulp',       ar:'أندرا لِلُب الفاكهة',   country:'IN', lead:18,imp:true},
+  S7:{en:'Sinai Sugar',             ar:'سيناء للسكر',          country:'EG', lead:2, imp:false},
+  S8:{en:'PetForm Egypt',           ar:'بت فورم مصر',          country:'EG', lead:3, imp:false},
+};
+function newItems(){ return [
+  {sku:'MILK-PWD', en:'Milk powder',          ar:'لبن بودرة',              uom:'kg',  onHand:2600,  cost:95,  sup:'S1', moq:3000},
+  {sku:'CULT-01',  en:'Cultures & rennet',    ar:'بادئ ومنفحة',            uom:'kg',  onHand:26,    cost:1400,sup:'S2', moq:60},
+  {sku:'SALT-25',  en:'Salt',                 ar:'ملح',                    uom:'kg',  onHand:1500,  cost:6,   sup:'S7', moq:2000},
+  {sku:'TUB-500',  en:'Plastic tubs 500g',    ar:'علب بلاستيك 500 جم',      uom:'pcs', onHand:8200,  cost:2.1, sup:'S3', moq:20000},
+  {sku:'LABEL',    en:'Labels',               ar:'ملصقات',                 uom:'pcs', onHand:150000,cost:0.25,sup:'S3', moq:100000},
+  {sku:'CARTON',   en:'Shipping cartons',     ar:'كراتين شحن',             uom:'pcs', onHand:9000,  cost:7,   sup:'S3', moq:6000},
+  {sku:'TOM-CONC', en:'Tomato concentrate',   ar:'مركز طماطم',             uom:'kg',  onHand:17000, cost:28,  sup:'S5', moq:20000},
+  {sku:'CAN-350',  en:'Tin cans 350g',        ar:'علب صفيح 350 جم',         uom:'pcs', onHand:30000, cost:3.2, sup:'S4', moq:40000},
+  {sku:'PULP',     en:'Mango pulp',           ar:'لب مانجو',               uom:'kg',  onHand:2900,  cost:40,  sup:'S6', moq:6000},
+  {sku:'SUGAR',    en:'Sugar',                ar:'سكر',                    uom:'kg',  onHand:6000,  cost:32,  sup:'S7', moq:3000},
+  {sku:'PET-1L',   en:'PET bottles 1L',       ar:'زجاجات PET لتر',          uom:'pcs', onHand:40000, cost:2.6, sup:'S8', moq:30000},
+  {sku:'CAN-200',  en:'Cans 200g (old size)', ar:'علب 200 جم (مقاس قديم)',  uom:'pcs', onHand:12000, cost:2.8, sup:'S4', moq:0, dead:true},
+  {sku:'OLD-LBL',  en:'Labels (old design)',  ar:'ملصقات (تصميم قديم)',     uom:'pcs', onHand:80000, cost:0.22,sup:'S3', moq:0, dead:true},
+]; }
+const UOM={kg:{en:'kg',ar:'كجم'},pcs:{en:'pcs',ar:'قطعة'}};
+const PRODUCTS={
+  'FETA-500':{en:'Feta 500g',         ar:'جبنة فيتا 500 جم',   price:85, bom:{'MILK-PWD':0.12,'CULT-01':0.002,'SALT-25':0.01,'TUB-500':1,'LABEL':1,'CARTON':1/12}},
+  'TOMP-350':{en:'Tomato paste 350g', ar:'صلصة طماطم 350 جم', price:32, bom:{'TOM-CONC':0.3,'SALT-25':0.005,'CAN-350':1,'LABEL':1,'CARTON':1/24}},
+  'JUICE-1L':{en:'Mango juice 1L',    ar:'عصير مانجو لتر',     price:45, bom:{'PULP':0.25,'SUGAR':0.08,'PET-1L':1,'LABEL':1,'CARTON':1/12}},
+};
+const CUSTOMERS=[
+  {en:'Carrefour Maadi',ar:'كارفور المعادي',region:'east'},{en:'Seoudi Market',ar:'أسواق سعودي',region:'east'},{en:'Kazyon',ar:'كازيون',region:'south'},
+  {en:'Metro Market',ar:'مترو ماركت',region:'east'},{en:'Spinneys',ar:'سبينيز',region:'south'},{en:'Gourmet Egypt',ar:'جورميه إيجيبت',region:'east'},{en:'Oscar Grand Stores',ar:'أوسكار جراند ستورز',region:'south'},
+];
+const LINE_NAMES={L1:{en:'Line 1 · Dairy',ar:'خط 1 · الألبان'},L2:{en:'Line 2 · Canning',ar:'خط 2 · التعليب'},L3:{en:'Line 3 · Bottling',ar:'خط 3 · التعبئة'}};
+const LINE_SHORT={L1:{en:'Line 1',ar:'خط 1'},L2:{en:'Line 2',ar:'خط 2'},L3:{en:'Line 3',ar:'خط 3'}};
+const MACHINES={
+  L1:[{en:'Pasteuriser',ar:'المبستر'},{en:'Curd vat',ar:'حوض الخثرة'},{en:'Filler',ar:'ماكينة التعبئة'},{en:'Labeller',ar:'ماكينة الملصقات'}],
+  L2:[{en:'Mixer',ar:'الخلاط'},{en:'Can filler',ar:'تعبئة العلب'},{en:'Seamer',ar:'ماكينة القفل'},{en:'Retort',ar:'المعقم'}],
+  L3:[{en:'Blender',ar:'الخلاط'},{en:'Pasteuriser',ar:'المبستر'},{en:'Bottle filler',ar:'تعبئة الزجاجات'},{en:'Capper',ar:'ماكينة الغطاء'}],
+};
+const DEFECTS=[{en:'Seal integrity',ar:'إحكام الغلق'},{en:'Label position',ar:'موضع الملصق'},{en:'Fill weight',ar:'وزن التعبئة'},{en:'Micro test',ar:'فحص ميكروبي'},{en:'Dented pack',ar:'عبوة مخبوطة'}];
+const REASONS=[{en:'Moisture above spec',ar:'رطوبة أعلى من المواصفة'},{en:'COA missing',ar:'شهادة التحليل مفقودة'},{en:'Seal damage on 3 pallets',ar:'تلف الغلق في 3 بالتات'},{en:'Colour off-spec',ar:'اللون خارج المواصفة'},{en:'Failed micro test',ar:'فشل الفحص الميكروبي'}];
+const CERTS=[{who:{en:'M. Adel',ar:'م. عادل'},what:{en:'Forklift licence',ar:'رخصة الرافعة الشوكية'},days:6},{who:{en:'S. Hany',ar:'س. هاني'},what:{en:'HACCP level 2',ar:'HACCP المستوى 2'},days:11},{who:{en:'R. Fathy',ar:'ر. فتحي'},what:{en:'Boiler operator',ar:'تشغيل الغلايات'},days:19}];
+
+const L_ = o => o[LANG] ?? o.en;
+const iname=sku=>L_(S.items.find(i=>i.sku===sku));
+const pname=sku=>L_(PRODUCTS[sku]);
+const sname=k=>L_(SUPPLIERS[k]);
+const cname=i=>L_(CUSTOMERS[i]);
+const lname=id=>L_(LINE_NAMES[id]);
+const lshort=id=>L_(LINE_SHORT[id]);
+const mname=(id,m)=>L_(MACHINES[id][m]);
+const reason=r=>L_(REASONS[r]);
+const uom=sku=>L_(UOM[S.items.find(i=>i.sku===sku).uom]);
+const bdi=s=>`<span class="ltr">${s}</span>`;   // keep codes like PO-2245 left-to-right inside Arabic text
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+let S, seq;
+function rnd(a,b){ return a+Math.random()*(b-a); }
+function ri(a,b){ return Math.floor(rnd(a,b+1)); }
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+function initState(){
+  seq={po:2251,lot:1040,so:1050,sh:310,wo:5520,ncr:80,inv:900};
+  S={
+    h:8, speed:1, auto:true,
+    items:newItems(),
+    fg:{'FETA-500':{onHand:5200},'TOMP-350':{onHand:9000},'JUICE-1L':{onHand:2600}},
+    pos:[], lots:[], orders:[], ships:[], payables:[], receivables:[], ncrs:[], events:[],
+    lines:[
+      {id:'L1', product:'FETA-500',rate:150,status:'run',paused:false,down:0,downM:-1,out:[],short:null,wo:null},
+      {id:'L2', product:'TOMP-350',rate:300,status:'run',paused:false,down:0,downM:-1,out:[],short:null,wo:null},
+      {id:'L3', product:'JUICE-1L',rate:200,status:'run',paused:false,down:0,downM:-1,out:[],short:null,wo:null},
+    ],
+    wos:[],
+    qc:{inspected:0,passed:0,held:0,failed:0,units:0,scrap:0,pareto:{}},
+    hr:{headcount:186,wage:62,shifts:[{id:'A',from:6,to:14,plan:58},{id:'B',from:14,to:22,plan:54},{id:'C',from:22,to:6,plan:38}],
+        present:{L1:0,L2:0,L3:0}, plan:{L1:14,L2:18,L3:16}, overtime:0, otActive:false, absentToday:0, safetyDays:143, openRoles:4},
+    fin:{cash:4.85e6, revMTD:11.2e6, cogsMTD:7.3e6, laborMTD:1.55e6, ohMTD:0.9e6, cashHist:[]},
+    hist:{out:[], demand:[]},
+    brief:{done:{}},
+  };
+  addPO('PULP',6000,{progress:0.82,delayed:true,lateBy:52, id:'PO-2238'});
+  addPO('TUB-500',20000,{progress:0.62,id:'PO-2245'});
+  addPO('CULT-01',60,{progress:0.45,id:'PO-2241'});
+  addPO('CAN-350',40000,{progress:0.22,id:'PO-2247'});
+  addPO('MILK-PWD',3000,{progress:0.06,id:'PO-2250'});
+  addPO('TOM-CONC',20000,{progress:0.3,id:'PO-2244'});
+  for(let i=0;i<7;i++) newOrder(true);
+  S.payables.push({id:'INV-8871',sup:'S3',amount:184000,dueH:S.h+30},{id:'INV-8868',sup:'S5',amount:612000,dueH:S.h-20},{id:'INV-8875',sup:'S1',amount:296000,dueH:S.h+70});
+  S.receivables.push({id:'AR-4410',c:2,amount:428000,dueH:S.h-36,rem:0},{id:'AR-4415',c:4,amount:215000,dueH:S.h+40,rem:0},{id:'AR-4419',c:3,amount:332000,dueH:S.h+90,rem:0});
+  for(let d=14;d>0;d--){ S.fin.cashHist.push(S.fin.cash*(0.9+Math.random()*0.15)); S.hist.demand.push(ri(14000,19000)); }
+  for(let i=0;i<24;i++) S.hist.out.push(ri(520,650));
+  S.lines.forEach(l=>{ newWO(l); newWO(l,true); newWO(l,true); });
+  staffShift();
+}
+
+const item = sku => S.items.find(i=>i.sku===sku);
+function dailyUse(sku){ let u=0; S.lines.forEach(l=>{ const b=PRODUCTS[l.product].bom[sku]; if(b && !l.paused) u+=b*l.rate*24; }); return u; }
+function onOrder(sku){ return S.pos.filter(p=>p.sku===sku && p.status!=='received' && p.status!=='rejected').reduce((a,p)=>a+p.qty,0); }
+function cover(sku){ const u=dailyUse(sku); return u? item(sku).onHand/u : Infinity; }
+function health(it){ if(it.dead) return 'idle'; const c=cover(it.sku); if(c<3) return 'bad'; if(c<6) return 'warn'; return 'ok'; }
+function rate(po){ let r=1/(SUPPLIERS[po.sup].lead*24); if(po.delayed) r*=0.5; if(po.status==='customs') r*=0.6; return r; }
+function etaH(po){ if(po.status==='received'||po.status==='qc') return 0; return Math.ceil((1-po.progress)/rate(po)); }
+function addPO(sku,qty,o={}){
+  const it=item(sku), sup=SUPPLIERS[it.sup];
+  const po={ id:o.id||('PO-'+(seq.po++)), sku, qty, sup:it.sup, imp:sup.imp, progress:o.progress||0, status:'ordered', delayed:!!o.delayed,
+    value:qty*it.cost, createdH:S.h, dueH:S.h+Math.round((1-(o.progress||0))*sup.lead*24), lateBy:o.lateBy||0 };
+  S.pos.push(po); return po;
+}
+function newWO(l,queued){ const w={id:'WO-'+(seq.wo++), line:l.id, product:l.product, qty:l.rate*8, done:0, status:queued?'queued':'running'}; S.wos.push(w); if(!queued) l.wo=w; return w; }
+function newOrder(seed){
+  const c=ri(0,CUSTOMERS.length-1), sku=pick(Object.keys(PRODUCTS)), qty=ri(6,30)*100;
+  const o={id:'SO-'+(seq.so++), c, region:CUSTOMERS[c].region, sku, qty, value:qty*PRODUCTS[sku].price, dueH:S.h+ri(seed?6:20,seed?60:80), status:'new', createdH:S.h};
+  S.orders.push(o); return o;
+}
+function money(v){
+  const a=Math.abs(v), s=v<0?'-':'';
+  if(AR()){ if(a>=1e6) return `${s}${(a/1e6).toFixed(2)} مليون ${CFG.currencyAr}`; if(a>=1e3) return `${s}${(a/1e3).toFixed(0)} ألف ${CFG.currencyAr}`; return `${s}${a.toFixed(0)} ${CFG.currencyAr}`; }
+  if(a>=1e6) return `${s}${CFG.currency} ${(a/1e6).toFixed(2)}M`; if(a>=1e3) return `${s}${CFG.currency} ${(a/1e3).toFixed(0)}k`; return `${s}${CFG.currency} ${a.toFixed(0)}`;
+}
+function num(v){ return Math.round(v).toLocaleString('en-US'); }
+function dayName(h){ return t('days')[(Math.floor(h/24)+1)%7]; }
+function clockStr(h){ const hh=h%24; return `${dayName(h)} · ${t('day')} ${Math.floor(h/24)+1} · ${String(hh).padStart(2,'0')}:00`; }
+function inH(h){ const d=h-S.h; if(d<0) return t('overdueD',Math.ceil(-d/24)); if(d<24) return t('inH',d); return t('dayIn',dayName(h),Math.round(d/24)); }
+
+/* =====================================================================
+   EVENTS / TOASTS  (stored as keys so the log follows the language)
+   ===================================================================== */
+const evText=e=>T[LANG].ev[e.k](...e.a);
+function event(k,a,level,mod){ const e={h:S.h,k,a,level,mod}; S.events.unshift(e); S.events=S.events.slice(0,60); toast(evText(e),level,mod); }
+function toast(text,level='ok',mod){
+  const el=document.createElement('div'); el.className='toast';
+  el.innerHTML=`<i style="background:${HEX[level]||HEX.ok}"></i><span>${text}</span>`;
+  if(mod) el.onclick=()=>openModule(mod);
+  const box=document.getElementById('toasts'); box.appendChild(el);
+  while(box.children.length>3) box.firstChild.remove();
+  gsap.fromTo(el,{y:20,opacity:0},{y:0,opacity:1,duration:.35,ease:'power3.out'});
+  setTimeout(()=>gsap.to(el,{opacity:0,y:10,duration:.4,onComplete:()=>el.remove()}),4200);
+}
+
+/* =====================================================================
+   SIMULATION — one tick = one hour
+   ===================================================================== */
+const isNight=()=>{ const h=S.h%24; return h>=22||h<6; };
+function staffShift(){
+  const hr=S.hr, night=isNight();
+  Object.keys(hr.plan).forEach(l=>{ const plan=night?Math.round(hr.plan[l]*0.7):hr.plan[l]; hr.present[l]=Math.max(0,plan-(Math.random()<0.45?ri(1,4):0)); });
+  hr.otActive=false;
+}
+function linePlan(id){ return Math.round(S.hr.plan[id]*(isNight()?0.7:1)); }
+function staffFactor(l){ return Math.min(1,S.hr.present[l.id]/Math.max(1,linePlan(l.id))); }
+
+function tick(){
+  S.h++;
+  const hod=S.h%24;
+  if(hod===6||hod===14||hod===22){ staffShift(); const low=S.lines.find(l=>staffFactor(l)<0.85);
+    event('shiftStart',[hod===6?'A':hod===14?'B':'C',Object.values(S.hr.present).reduce((a,b)=>a+b,0)],'ok','hr'); if(low) event('understaffed',[low.id],'warn','hr'); }
+
+  /* purchasing & importing */
+  S.pos.forEach(po=>{
+    if(['qc','received','rejected'].includes(po.status)) return;
+    if(po.imp && po.progress>=0.8 && po.progress<0.9) po.status='customs';
+    else if(po.progress>=0.04) po.status='in transit'; else po.status='ordered';
+    const was=po.progress;
+    po.progress=Math.min(1,po.progress+rate(po));
+    if(po.delayed) po.lateBy=Math.max(po.lateBy, S.h+etaH(po)-po.dueH);
+    if(!po.delayed && po.status!=='ordered' && Math.random()<0.003){ po.delayed=true; po.lateBy=ri(18,60); event('poDelayed',[po.id,po.status==='customs',po.sku],'bad','purchasing'); }
+    if(was<0.8 && po.progress>=0.8 && po.imp) event('poCustoms',[po.id,po.sku],'warn','purchasing');
+    if(po.progress>=1){
+      po.status='qc'; po.arrH=S.h;
+      const lot={id:'L-'+(seq.lot++), po:po.id, sku:po.sku, qty:po.qty, status:'pending', inH:S.h};
+      S.lots.push(lot);
+      S.payables.push({id:'INV-'+(seq.inv++), sup:po.sup, amount:po.value, dueH:S.h+24*ri(10,30)});
+      event('poArrived',[po.id,lot.id],'ok','qc');
+    }
+  });
+
+  /* QA / QC */
+  S.lots.forEach(l=>{
+    if(l.status==='pending' && S.h-l.inH>=3){
+      const r=Math.random(); S.qc.inspected++;
+      if(r<0.84){ l.status='pass'; l.doneH=S.h; release(l); }
+      else if(r<0.95){ l.status='hold'; S.qc.held++; l.r=ri(0,3); S.ncrs.push({id:'NCR-'+(seq.ncr++),lot:l.id,r:l.r,h:S.h}); event('lotHold',[l.id,l.sku,l.r],'warn','qc'); }
+      else { l.status='fail'; S.qc.failed++; l.r=4; l.doneH=S.h; S.ncrs.push({id:'NCR-'+(seq.ncr++),lot:l.id,r:4,h:S.h});
+        const po=S.pos.find(p=>p.id===l.po); if(po) po.status='rejected'; event('lotRejected',[l.id],'bad','qc'); addPO(l.sku,l.qty); }
+    }
+  });
+  S.lots=S.lots.filter(l=>!((l.status==='pass'||l.status==='fail') && S.h-l.doneH>4));
+
+  /* manufacturing */
+  let plantOut=0;
+  S.lines.forEach(l=>{
+    if(l.down>0){ l.down--; if(l.down===0){ l.downM=-1; event('lineUp',[l.id],'ok','manufacturing'); } }
+    if(l.down===0 && !l.paused && Math.random()<0.012){ l.down=ri(2,6); l.downM=ri(0,3); event('machineDown',[l.id,l.downM,l.down],'bad','manufacturing'); }
+    let units=0; l.short=null;
+    if(l.paused) l.status='idle';
+    else if(l.down>0) l.status='down';
+    else{
+      units=Math.round(l.rate*staffFactor(l)*(S.hr.otActive?1.05:1)*rnd(0.92,1.03));
+      const bom=PRODUCTS[l.product].bom;
+      for(const sku in bom){ const can=Math.floor(item(sku).onHand/bom[sku]); if(can<units){ units=Math.max(0,can); l.short=sku; } }
+      for(const sku in bom) item(sku).onHand=Math.max(0,item(sku).onHand-units*bom[sku]);
+      if(units<l.rate*0.25){ if(l.status!=='starved') event('lineStopped',[l.id,l.short],'bad','manufacturing'); l.status='starved'; }
+      else l.status = units<l.rate*0.9 ? 'slow':'run';
+      const scrap=Math.round(units*rnd(0.005,0.03)); S.qc.units+=units; S.qc.scrap+=scrap;
+      if(scrap){ const d=ri(0,DEFECTS.length-1); S.qc.pareto[d]=(S.qc.pareto[d]||0)+scrap; }
+      units-=scrap;
+      S.fg[l.product].onHand+=units;
+      if(l.wo){ l.wo.done+=units; if(l.wo.done>=l.wo.qty){ l.wo.status='done'; l.wo.doneH=S.h; const nx=S.wos.find(w=>w.line===l.id&&w.status==='queued'); if(nx){nx.status='running'; l.wo=nx;} newWO(l,true); } }
+    }
+    l.out.push(units); if(l.out.length>24) l.out.shift();
+    plantOut+=units;
+  });
+  S.hist.out.push(plantOut); if(S.hist.out.length>24) S.hist.out.shift();
+  S.wos=S.wos.filter(w=>w.status!=='done'||S.h-w.doneH<24);
+
+  /* sales */
+  if(Math.random()<0.32){ const o=newOrder(); event('newOrder',[o.id,o.c,num(o.qty),o.sku],'ok','sales'); }
+  if(S.auto) S.orders.filter(o=>o.status==='new'||o.status==='backorder').sort((a,b)=>a.dueH-b.dueH).forEach(o=>allocate(o,true));
+
+  /* logistics */
+  if(S.auto && hod%3===0) S.orders.filter(o=>o.status==='ready').slice(0,trucksFree()).forEach(o=>dispatch(o));
+  S.ships.forEach(sh=>{
+    if(sh.status!=='en route') return;
+    sh.progress=Math.min(1,sh.progress+1/sh.transit);
+    if(sh.progress>=1){
+      sh.status='delivered'; sh.delH=S.h; const o=S.orders.find(o=>o.id===sh.order); o.status='delivered'; o.delH=S.h;
+      S.fin.revMTD+=o.value; S.fin.cogsMTD+=o.value*0.62;
+      S.receivables.push({id:'AR-'+(seq.inv++),c:o.c,amount:o.value,dueH:S.h+24*ri(7,30),rem:0});
+      event('delivered',[o.id,o.c,S.h>o.dueH],S.h>o.dueH?'warn':'ok','logistics');
+    }
+  });
+  S.ships=S.ships.filter(s=>s.status!=='delivered'||S.h-s.delH<12);
+  S.orders=S.orders.filter(o=>o.status!=='delivered'||S.h-o.delH<48);
+
+  /* finance */
+  const present=Object.values(S.hr.present).reduce((a,b)=>a+b,0)+20;
+  const labor=present*S.hr.wage*(S.hr.otActive?1.25:1); S.fin.cash-=labor; S.fin.laborMTD+=labor;
+  S.fin.cash-=3200; S.fin.ohMTD+=3200;
+  S.receivables.forEach(r=>{ if(!r.paid && S.h>=r.dueH-12 && Math.random()<(r.rem?0.2:0.06)){ r.paid=true; S.fin.cash+=r.amount; event('paid',[r.c,r.amount],'ok','finance'); } });
+  S.receivables=S.receivables.filter(r=>!r.paid);
+  S.payables.forEach(p=>{ if(!p.paid && S.h>p.dueH+48) pay(p,true); });
+  S.payables=S.payables.filter(p=>!p.paid);
+  if(hod===0){ S.fin.cashHist.push(S.fin.cash); if(S.fin.cashHist.length>30) S.fin.cashHist.shift();
+    S.hist.demand.push(S.orders.filter(o=>S.h-o.createdH<24).reduce((a,o)=>a+o.qty,0)||ri(14000,19000)); if(S.hist.demand.length>21) S.hist.demand.shift(); S.hr.safetyDays++; }
+
+  /* autopilot MRP for critical items */
+  if(S.auto) suggestions().filter(s=>s.critical && !s.ordered).forEach(s=>{ const po=addPO(s.sku,s.qty); event('autoPO',[po.id,s.sku,cover(s.sku).toFixed(1)],'warn','purchasing'); });
+
+  onTick();
+}
+
+/* actions */
+function release(l){ item(l.sku).onHand+=l.qty; const po=S.pos.find(p=>p.id===l.po); if(po) po.status='received'; S.qc.passed++; }
+function allocate(o,silent){
+  const fg=S.fg[o.sku];
+  if(fg.onHand>=o.qty){ fg.onHand-=o.qty; o.status='ready'; if(!silent) event('allocated',[o.id],'ok','sales'); return true; }
+  if(o.status!=='backorder'){ o.status='backorder'; if(!silent) event('backordered',[o.id,o.sku],'warn','sales'); }
+  return false;
+}
+const FLEET=6;
+function trucksFree(){ return FLEET-S.ships.filter(s=>s.status==='en route').length; }
+function dispatch(o){
+  if(trucksFree()<=0){ toast(t('noTrucks'),'warn','logistics'); return; }
+  o.status='shipped';
+  const sh={id:'SH-'+(seq.sh++), order:o.id, c:o.c, region:o.region, progress:0, transit:ri(6,14), status:'en route', truck:'TR-'+ri(10,16)};
+  S.ships.push(sh); event('dispatched',[o.id,o.c,sh.truck],'ok','logistics');
+}
+function pay(p,auto){ p.paid=true; S.fin.cash-=p.amount; event('paySup',[!!auto,p.sup,p.amount],auto?'warn':'ok','finance'); }
+function suggestions(){
+  return S.items.filter(i=>!i.dead).map(i=>{
+    const u=dailyUse(i.sku), lead=SUPPLIERS[i.sup].lead, rop=u*(lead+2), pos=i.onHand+onOrder(i.sku);
+    const need=pos<rop, qty=Math.max(i.moq, Math.ceil((u*(lead+7)-pos)/1000)*1000);
+    return {sku:i.sku, need, qty, critical: i.onHand/u < lead*0.6 && onOrder(i.sku)===0, ordered:onOrder(i.sku)>0 && !need};
+  }).filter(s=>s.need);
+}
+const ACT={
+  createPO:(sku)=>{ const s=suggestions().find(s=>s.sku===sku); const po=addPO(sku,s?s.qty:item(sku).moq); event('poRaised',[po.id,num(po.qty),sku,po.sup],'ok','purchasing'); },
+  expedite:(id)=>{ const po=S.pos.find(p=>p.id===id); po.delayed=false; po.lateBy=0; const fee=Math.round(po.value*0.04); S.fin.cash-=fee; event('expedited',[id,fee],'ok','purchasing'); },
+  release:(id)=>{ const l=S.lots.find(l=>l.id===id); l.status='pass'; l.doneH=S.h; release(l); event('released',[id],'ok','qc'); },
+  reject:(id)=>{ const l=S.lots.find(l=>l.id===id); l.status='fail'; l.doneH=S.h; S.qc.failed++; const po=S.pos.find(p=>p.id===l.po); if(po) po.status='rejected'; const np=addPO(l.sku,l.qty); event('rejectedRepl',[id,np.id],'bad','qc'); },
+  inspect:(id)=>{ const l=S.lots.find(l=>l.id===id); l.inH=S.h-3; toast(t('inspectFront',id),'ok'); },
+  fix:(id)=>{ const l=S.lines.find(l=>l.id===id); l.down=1; event('maint',[id],'ok','manufacturing'); },
+  pause:(id)=>{ const l=S.lines.find(l=>l.id===id); l.paused=!l.paused; event('paused',[id,l.paused],'warn','manufacturing'); },
+  liquidate:(sku)=>{ const i=item(sku); const v=i.onHand*i.cost*0.55; S.fin.cash+=v; event('liquidated',[sku,v],'ok','inventory'); i.onHand=0; },
+  allocate:(id)=>{ allocate(S.orders.find(o=>o.id===id)); },
+  dispatch:(id)=>{ dispatch(S.orders.find(o=>o.id===id)); },
+  newOrder:()=>{ const o=newOrder(); event('newOrder',[o.id,o.c,num(o.qty),o.sku],'ok','sales'); },
+  overtime:()=>{ Object.keys(S.hr.plan).forEach(l=>S.hr.present[l]=linePlan(l)); S.hr.otActive=true; S.hr.overtime+=Object.values(S.hr.plan).reduce((a,b)=>a+b,0)*0.3; event('overtime',[],'ok','hr'); },
+  pay:(id)=>{ pay(S.payables.find(p=>p.id===id)); },
+  remind:(id)=>{ const r=S.receivables.find(r=>r.id===id); r.rem++; toast(t('reminder',r.c),'ok'); },
+  csv:(kind)=>downloadCSV(kind),
+};
+
+/* =====================================================================
+   THREE.JS WORLD
+   ===================================================================== */
+const canvas=document.getElementById('scene');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0xf2f3f5);
+const VIEW=56;
+const cam=new THREE.OrthographicCamera(-1,1,1,-1,1,900);
+function resize(){ const w=innerWidth,h=innerHeight,a=w/h,s=VIEW/2; renderer.setSize(w,h,false); cam.left=-s*a;cam.right=s*a;cam.top=s;cam.bottom=-s; cam.updateProjectionMatrix(); }
+addEventListener('resize',resize); resize();
+scene.add(new THREE.HemisphereLight(0xffffff,0xd4d8de,0.8));
+const sun=new THREE.DirectionalLight(0xffffff,0.55); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:1,far:500}); sun.shadow.bias=-0.0006; sun.shadow.normalBias=0.03;
+scene.add(sun,sun.target);
+
+const mc={}; const M=(c,f)=>mc[c+(f?'f':'')]||=new THREE.MeshLambertMaterial({color:c,flatShading:!!f});
+const C={ground:0xeceef1,pad:0xe4e6ea,road:0xd3d6db,white:0xffffff,wall:0xdfe2e6,roof:0xf7f8f9,dark:0x34373c,glass:0x2b2f35,steel:0xa7acb3,tree:0x8fd3b4,tree2:0x7cc7a5,trunk:0x9aa0a6};
+function box(w,h,d,c,x=0,y=0,z=0,p=scene,sh=true){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),Array.isArray(c)?c:(c&&c.isMaterial?c:M(c))); m.position.set(x,y+h/2,z); m.castShadow=sh; m.receiveShadow=true; p.add(m); return m; }
+function grp(x=0,y=0,z=0,p=scene){ const g=new THREE.Group(); g.position.set(x,y,z); p.add(g); return g; }
+function textTex(txt,w,h,bg,fg,size){ const cv=document.createElement('canvas'); cv.width=w; cv.height=h; const g=cv.getContext('2d'); g.fillStyle=bg; g.fillRect(0,0,w,h); g.fillStyle=fg; g.font=`italic 800 ${size}px Inter, Arial`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(txt,w/2,h/2+2); const tx=new THREE.CanvasTexture(cv); tx.anisotropy=8; return tx; }
+const brandMat=new THREE.MeshLambertMaterial({map:textTex(CFG.brand,512,128,'#e30613','#ffffff',72)});
+const brandWide=new THREE.MeshLambertMaterial({map:textTex(CFG.brand,1024,96,'#e30613','#ffffff',62)});
+function tree(x,z,s=1){ const g=grp(x,0,z); const tr=new THREE.Mesh(new THREE.CylinderGeometry(.16*s,.2*s,1.4*s,6),M(C.trunk)); tr.position.y=.7*s; tr.castShadow=true; g.add(tr);
+  const c=new THREE.Mesh(new THREE.IcosahedronGeometry(1.25*s,0),M(Math.random()<.5?C.tree:C.tree2,true)); c.scale.set(1,1.35,1); c.position.y=2.6*s; c.rotation.y=Math.random()*3; c.castShadow=true; g.add(c); }
+class Path{ constructor(pts){ this.p=pts.map(a=>new THREE.Vector2(a[0],a[1])); this.L=[0]; for(let i=1;i<this.p.length;i++) this.L.push(this.L[i-1]+this.p[i].distanceTo(this.p[i-1])); this.total=this.L[this.L.length-1]; }
+  at(d){ d=Math.max(0,Math.min(this.total,d)); let i=1; while(i<this.L.length-1&&this.L[i]<d) i++; const a=this.p[i-1],b=this.p[i],k=(d-this.L[i-1])/((this.L[i]-this.L[i-1])||1); return {x:a.x+(b.x-a.x)*k,z:a.y+(b.y-a.y)*k,ang:Math.atan2(-(b.y-a.y),b.x-a.x)}; } }
+function lerpAng(a,b,k){ let d=b-a; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2; return a+d*k; }
+function road(pts,w=6){ for(let i=1;i<pts.length;i++){ const [x1,z1]=pts[i-1],[x2,z2]=pts[i]; const len=Math.hypot(x2-x1,z2-z1),ang=Math.atan2(-(z2-z1),x2-x1); const r=box(len+w,0.06,w,C.road,(x1+x2)/2,0.06,(z1+z2)/2,scene,false); r.rotation.y=ang; } }
+function strip(pts,color,w=0.7,y=0.14){ const mat=new THREE.MeshBasicMaterial({color}); for(let i=1;i<pts.length;i++){ const [x1,z1]=pts[i-1],[x2,z2]=pts[i]; const len=Math.hypot(x2-x1,z2-z1),ang=Math.atan2(-(z2-z1),x2-x1); const m=new THREE.Mesh(new THREE.BoxGeometry(len+w,0.04,w),mat); m.position.set((x1+x2)/2,y,(z1+z2)/2); m.rotation.y=ang; scene.add(m);} return mat; }
+function truck(color=RED,branded=true){
+  const g=new THREE.Group(); scene.add(g); const c=M(color);
+  box(7.4,2.7,2.4,branded?[c,c,M(0xf4f4f4),c,brandMat,brandMat]:c,-1.2,.8,0,g);
+  box(7.2,.25,2,C.dark,-1.2,.55,0,g); box(2.2,2.7,2.35,branded?RED:0x6d7680,3.55,.55,0,g); box(.12,.9,2,C.glass,4.68,2,0,g);
+  [-3.8,-2.6,2,3.9].forEach(x=>{ box(.9,.9,.4,C.dark,x,.1,1.1,g); box(.9,.9,.4,C.dark,x,.1,-1.1,g); }); return g;
+}
+const statusMat=()=>new THREE.MeshLambertMaterial({color:COL.ok});
+const anchors={};
+
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(1200,800),M(C.ground)); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+box(176,0.05,118,C.pad,4,0,0,scene,false);
+for(let x=-82;x<=90;x+=4) box(0.12,1.2,0.12,C.steel,x,0,-58,scene,false);
+road([[-320,-66],[320,-66]],12);
+road([[-58,-60],[-58,-48]],8);
+road([[78,18],[240,18]],7); road([[86,18],[86,240]],7);
+road([[-82,48],[-40,48]],6);
+
+/* inbound lanes */
+const IMP_PTS=[[-320,-63],[-62,-63],[-62,-50]];
+const LOC_PTS=[[320,-69],[-55,-69],[-55,-50]];
+const impPath=new Path(IMP_PTS), locPath=new Path(LOC_PTS);
+const impMat=strip(IMP_PTS,COL.ok), locMat=strip(LOC_PTS,COL.ok);
+const CUSTOMS_X=-175;
+(function(){ const g=grp(CUSTOMS_X,0,-56); box(6,4,5,C.white,0,0,0,g); box(6.4,.6,5.4,0xf0a020,0,4,0,g); box(14,.8,.6,0xf0a020,-2,3.6,-5.5,g); box(.6,3.6,.6,C.steel,-9,0,-5.5,g); anchors.customs=new THREE.Vector3(CUSTOMS_X,8,-60); })();
+const customsMat=strip([[CUSTOMS_X-14,-63],[CUSTOMS_X+14,-63]],COL.warn,0.9,0.16);
+
+/* outbound lanes */
+const EAST_PTS=[[72,18],[175,18]], SOUTH_PTS=[[72,18],[86,18],[86,130]];
+const eastPath=new Path(EAST_PTS), southPath=new Path(SOUTH_PTS);
+const eastMat=strip([[78,15.6],[300,15.6]],COL.ok,0.6), southMat=strip([[83.6,18],[83.6,300]],COL.ok,0.6);
+
+/* receiving / purchasing */
+(function(){
+  const g=grp(-60,0,-45); box(22,6,9,C.wall,0,0,0,g); box(22.4,.6,9.4,C.roof,0,6,0,g); box(22.2,1.6,.3,brandWide,0,4,4.6,g);
+  for(let i=0;i<4;i++) box(3.4,3.6,.2,0xbfc4ca,-7.5+i*5,.2,4.6,g);
+  const gh=grp(-50,0,-55); box(3,3,3,C.white,0,0,0,gh); box(3.3,.4,3.3,RED,0,3,0,gh); box(8,.4,.4,RED,-5,2.6,0,gh);
+  anchors.purchasing=new THREE.Vector3(-60,10,-45);
+})();
+
+/* QC */
+const qcSlots=[];
+(function(){
+  const g=grp(-68,0,-27); box(14,5,10,C.white,0,0,0,g); box(14.05,1.4,10.05,C.glass,0,1.8,0,g,false); box(14.4,.5,10.4,RED,0,5,0,g); box(2,1.6,2,C.steel,3,5.5,-2,g);
+  box(20,.08,15,0xf6f0dc,-48,0,-24,scene,false);
+  [[-58,-31.6],[-38,-31.6],[-58,-16.4],[-38,-16.4]].forEach(([x,z])=>box(.3,1,.3,0xf0a020,x,0,z));
+  for(let r=0;r<3;r++) for(let c=0;c<4;c++){
+    const x=-54+c*4.4, z=-28+r*4.4;
+    const pal=grp(x,0,z); box(2.6,.3,2.6,0xc9b48a,0,0,0,pal,false);
+    const mat=statusMat(); const top=box(2.4,1.6,2.4,mat,0,.3,0,pal); pal.visible=false;
+    qcSlots.push({g:pal,mat,top,pos:new THREE.Vector3(x,2.4,z)});
+  }
+  anchors.qc=new THREE.Vector3(-56,9,-25);
+})();
+
+/* RM warehouse */
+const invSlots={};
+(function(){
+  const W=grp(-15,0,-30);
+  box(44,.35,26,0xf7f7f8,0,0,0,W); box(44,8,.6,C.wall,0,0,-13,W); box(.6,8,26,C.wall,-22,0,0,W);
+  box(44.4,.8,.8,RED,0,8,-13,W); box(.8,.8,26.4,RED,-22,8,0,W);
+  box(44,.5,.4,C.wall,0,.35,13,W,false); box(.4,.5,26,C.wall,22,.35,0,W,false);
+  for(let x=-20;x<=20;x+=8) box(.5,8,.5,C.steel,x,0,12.7,W);
+  newItems().map(i=>i.sku).forEach((sku,k)=>{
+    const col=k%5, row=Math.floor(k/5), x=-16+col*8, z=-7.5+row*7.5;
+    const mat=statusMat(); const boxes=[];
+    box(6,.06,6,0xeceef1,x,.36,z,W,false);
+    for(let lv=0;lv<3;lv++) for(let i=0;i<4;i++){ const bx=x-1.4+(i%2)*2.8, bz=z-1.4+Math.floor(i/2)*2.8; boxes.push(box(2.5,1.9,2.5,mat,bx,.4+lv*2,bz,W)); }
+    invSlots[sku]={mat,boxes,pos:new THREE.Vector3(-15+x,7.5,-30+z)};
+  });
+  anchors.inventory=new THREE.Vector3(-15,11,-30);
+})();
+
+/* production hall */
+const lineVis=[];
+(function(){
+  const H=grp(-5,0,12);
+  box(64,.35,34,0xf7f7f8,0,0,0,H); box(64,9,.6,C.wall,0,0,-17,H); box(.6,9,34,C.wall,-32,0,0,H);
+  box(64.4,.9,.8,RED,0,9,-17,H); box(.8,.9,34.4,RED,-32,9,0,H);
+  box(64,.5,.4,C.wall,0,.35,17,H,false); box(.4,.5,34,C.wall,32,.35,0,H,false);
+  for(let x=-30;x<=30;x+=10) box(.5,9,.5,C.steel,x,0,16.6,H);
+  box(40,2.4,.3,brandWide,0,5.6,-16.6,H);
+  [-9,0,9].forEach((z,li)=>{
+    box(52,1,1.6,0x9aa1a9,0,.35,z,H); box(52,.06,1.3,0x4a4f56,0,1.36,z,H,false);
+    const ms=[];
+    [-20,-7,6,18].forEach(x=>{
+      const m=grp(x,0,z,H);
+      box(5,3.6,4.2,C.white,0,.35,0,m); box(5.05,.8,4.25,0x3a3f46,0,2.2,0,m,false);
+      const light=new THREE.MeshBasicMaterial({color:COL.ok}); const lb=box(.9,.9,.9,light,1.6,3.95,-1.4,m,false);
+      box(.15,1.6,.15,C.steel,1.6,3.95,-1.4,m,false); lb.position.y=5.5;
+      ms.push({g:m,light,lb});
+    });
+    const items=[]; for(let i=0;i<14;i++) items.push(box(1,.9,1,li===0?0xf4f4f4:li===1?0xc0c6cd:0xf2c94c,-26+i*4,1.4,z,H));
+    lineVis.push({ms,items,z,off:0,pos:new THREE.Vector3(-5-27,4,12+z)});
+  });
+  anchors.manufacturing=new THREE.Vector3(-5,13,12);
+})();
+
+/* FG + sales */
+const fgSlots={};
+(function(){
+  const F=grp(47,0,-26);
+  box(30,.35,22,0xf7f7f8,0,0,0,F); box(30,7,.6,C.wall,0,0,-11,F); box(.6,7,22,C.wall,-15,0,0,F);
+  box(30.4,.8,.8,RED,0,7,-11,F); box(.8,.8,22.4,RED,-15,7,0,F);
+  Object.keys(PRODUCTS).forEach((sku,k)=>{
+    const x=-9+k*9, z=-1; const mat=statusMat(); const boxes=[];
+    for(let lv=0;lv<4;lv++) for(let i=0;i<6;i++){ const bx=x-1.6+(i%2)*3.2, bz=z-4.6+Math.floor(i/2)*3.2; boxes.push(box(2.8,1.6,2.8,mat,bx,.4+lv*1.7,bz,F)); }
+    fgSlots[sku]={mat,boxes,pos:new THREE.Vector3(47+x,8.5,-26+z)};
+  });
+  const so=grp(66,0,-44); box(12,5,8,C.white,0,0,0,so); box(12.05,1.2,8.05,C.glass,0,1.8,0,so,false); box(12.4,.6,8.4,RED,0,5,0,so);
+  anchors.sales=new THREE.Vector3(52,11,-30);
+})();
+
+/* dispatch */
+const dockTrucks=[];
+(function(){
+  const D=grp(52,0,18); box(30,8,20,C.wall,0,0,0,D); box(30.4,.6,20.4,C.roof,0,8,0,D); box(.3,2.4,18,brandWide,15.1,5,0,D);
+  for(let i=0;i<4;i++) box(.2,4,3.4,0xbfc4ca,15.1,.2,-6.75+i*4.5,D);
+  for(let i=0;i<4;i++){ const tk=truck(); tk.position.set(74,0,11.25+i*4.5); tk.visible=false; dockTrucks.push(tk); }
+  anchors.logistics=new THREE.Vector3(60,12,18);
+})();
+
+/* HR */
+const people=[];
+(function(){
+  const A=grp(-64,0,28); box(20,7,12,C.white,0,0,0,A); for(let y=1.2;y<6;y+=2.3) box(20.05,1.1,12.05,C.glass,0,y,0,A,false); box(20.4,.6,12.4,RED,0,7,0,A);
+  for(let i=0;i<10;i++) box(.15,.02,5,C.white,-80+i*3.2,.13,48,scene,false);
+  for(let i=0;i<9;i++){ const g=grp(-78.4+i*3.2,0,48); box(1.8,.9,3.8,pick([0xffffff,0x9aa0a6,0x34373c,0xc9ccd1]),0,.25,0,g); box(1.6,.7,2,C.glass,0,1.1,-.2,g); }
+  const pm=[M(RED),M(0x2f80ed),M(0x34373c)];
+  for(let i=0;i<40;i++){ const p=grp(0,0,0); box(.6,1.3,.6,pick(pm),0,0,0,p); box(.5,.5,.5,0xf1c9a5,0,1.35,0,p); p.userData={t:Math.random(),sp:rnd(.04,.09),lane:rnd(-2,2)}; people.push(p); }
+  anchors.hr=new THREE.Vector3(-64,11,28);
+})();
+
+/* finance HQ */
+(function(){
+  const g=grp(-30,0,46); let y=0;
+  for(let f=0;f<7;f++){ box(11,1.25,11,C.glass,0,y,0,g); box(11.3,.45,11.3,0xd8c8a4,0,y+1.25,0,g); y+=1.7; }
+  box(11.4,1,11.4,RED,0,y,0,g); box(.2,4,.2,C.steel,3,y+1,0,g);
+  anchors.finance=new THREE.Vector3(-30,17,46);
+})();
+
+[[-86,-50],[-88,-36],[-87,-20],[-88,-4],[-88,12],[-87,58],[-70,62],[-50,62],[-12,62],[2,60],[16,62],[30,60],[44,62],[60,60],[94,-50],[96,-36],[95,-10],[96,4],[96,40],[96,56],[74,-54],[28,-54],[10,-55],[-20,-52],[-4,40],[10,42],[24,44],[40,40]].forEach(([x,z])=>tree(x,z,0.9+Math.random()*.4));
+for(let i=0;i<50;i++) tree(rnd(-300,300),rnd(-150,-80),rnd(.8,1.4));
+for(let i=0;i<30;i++){ const x=rnd(110,300), z=rnd(30,140); if(Math.abs(z-18)>8 && Math.abs(x-86)>8) tree(x,z,rnd(.8,1.3)); }
+
+const inTrucks={}, outTrucks={};
+
+/* =====================================================================
+   3D ↔ STATE SYNC
+   ===================================================================== */
+function sync3D(){
+  S.items.forEach(it=>{
+    const s=invSlots[it.sku]; if(!s) return;
+    s.mat.color.setHex(COL[health(it)]);
+    let fill = it.dead ? Math.min(1,(it.onHand*it.cost)/30000) : Math.min(1,cover(it.sku)/12);
+    if(it.onHand<=0) fill=0;
+    const n=Math.ceil(fill*12); s.boxes.forEach((b,i)=>b.visible=i<Math.max(n, it.onHand>0?1:0));
+  });
+  Object.keys(PRODUCTS).forEach(sku=>{
+    const s=fgSlots[sku]; const on=S.fg[sku].onHand; const open=S.orders.filter(o=>o.sku===sku&&(o.status==='new'||o.status==='backorder')).reduce((a,o)=>a+o.qty,0);
+    s.mat.color.setHex(COL[on<open?'bad': on<open*1.5+2000?'warn':'ok']);
+    const n=Math.ceil(Math.min(1,on/12000)*24); s.boxes.forEach((b,i)=>b.visible=i<n);
+  });
+  const active=S.lots.slice(-12);
+  qcSlots.forEach((s,i)=>{ const l=active[i]; s.g.visible=!!l; s.lot=l; if(l) s.mat.color.setHex(l.status==='pending'?COL.pend:l.status==='hold'?COL.warn:l.status==='fail'?COL.bad:COL.ok); });
+  S.lines.forEach((l,li)=>{
+    lineVis[li].ms.forEach((m,mi)=>{
+      let c=COL.ok;
+      if(l.status==='idle') c=COL.idle;
+      else if(l.status==='down') c= mi===l.downM?COL.bad:COL.idle;
+      else if(l.status==='starved') c=COL.bad;
+      else if(l.status==='slow') c=COL.warn;
+      m.light.color.setHex(c); m.blink=(l.status==='down'&&mi===l.downM)||l.status==='starved';
+    });
+  });
+  const impLate=S.pos.some(p=>p.imp&&p.delayed&&['in transit','customs'].includes(p.status));
+  const locLate=S.pos.some(p=>!p.imp&&p.delayed&&['in transit','ordered'].includes(p.status));
+  impMat.color.setHex(impLate?COL.bad:COL.ok); locMat.color.setHex(locLate?COL.bad:COL.ok);
+  customsMat.color.setHex(S.pos.some(p=>p.status==='customs')?(S.pos.some(p=>p.status==='customs'&&p.delayed)?COL.bad:COL.warn):COL.ok);
+  const lateShip=r=>S.ships.some(s=>s.region===r&&s.status==='en route'&&S.h+Math.ceil((1-s.progress)*s.transit)>S.orders.find(o=>o.id===s.order).dueH);
+  eastMat.color.setHex(lateShip('east')?COL.bad:COL.ok); southMat.color.setHex(lateShip('south')?COL.bad:COL.ok);
+  const live=new Set();
+  S.pos.filter(p=>['ordered','in transit','customs'].includes(p.status)&&p.progress>=0.04).forEach(p=>{ live.add(p.id); if(!inTrucks[p.id]){ const tk=truck(p.imp?0x3d6f9a:0x7b8590,false); tk.userData={d:-1,ang:0}; inTrucks[p.id]=tk; } });
+  Object.keys(inTrucks).forEach(id=>{ if(!live.has(id)){ scene.remove(inTrucks[id]); delete inTrucks[id]; } });
+  const ready=S.orders.filter(o=>o.status==='ready').length; dockTrucks.forEach((tk,i)=>tk.visible=i<ready);
+  const liveS=new Set();
+  S.ships.filter(s=>s.status==='en route').forEach(s=>{ liveS.add(s.id); if(!outTrucks[s.id]){ const tk=truck(); tk.userData={d:-1,ang:0}; outTrucks[s.id]=tk; } });
+  Object.keys(outTrucks).forEach(id=>{ if(!liveS.has(id)){ scene.remove(outTrucks[id]); delete outTrucks[id]; } });
+}
+function poDist(p){
+  const path=p.imp?impPath:locPath;
+  if(!p.imp) return {path,d:p.progress*path.total};
+  const cd=CUSTOMS_X-(-320); let d;
+  if(p.progress<0.8) d=p.progress/0.8*cd;
+  else if(p.progress<0.9) d=cd-4-(S.pos.filter(q=>q.status==='customs').indexOf(p))*10;
+  else d=cd+(p.progress-0.9)/0.1*(path.total-cd);
+  return {path,d};
+}
+
+/* =====================================================================
+   3D LABELS
+   ===================================================================== */
+const labelsEl=document.getElementById('labels');
+const labelPool=[];
+function getLabel(i){ if(!labelPool[i]){ const d=document.createElement('div'); d.className='lab3'; labelsEl.appendChild(d); labelPool[i]={el:d,html:''}; } return labelPool[i]; }
+let labelDefs=[];
+const dot=c=>`<i style="background:${HEX[c]}"></i>`;
+const chip=(c,txt)=>`<div class="chip">${dot(c)}<span>${txt}</span></div><div class="stem"></div>`;
+function buildLabels(){
+  const L=[]; const m=current.key;
+  const add=(pos,html,mod,cls='')=>L.push({pos,html,mod,cls});
+  if(m==='reports'){
+    MODULES.forEach((md,i)=>{ if(md.key==='reports') return; const a=alertsFor(md.key);
+      add(anchors[md.key],`<div class="chip"><b>${i+1}</b>${mN(md.key)}${a?`<em>${a}</em>`:''}</div><div class="stem"></div><div class="dot"></div>`,md.key,'zone'); });
+  }
+  if(m==='purchasing'){
+    S.pos.filter(p=>['in transit','customs'].includes(p.status)&&inTrucks[p.id]).forEach(p=>{
+      const st=p.delayed?'bad':p.status==='customs'?'warn':'ok';
+      const txt=p.delayed?t('lb_late',Math.max(1,Math.round(p.lateBy/24))):p.status==='customs'?t('inCustoms'):t('onTime');
+      add(inTrucks[p.id].position.clone().setY(5),chip(st,`${bdi(p.id)} · ${txt}`),'purchasing');
+    });
+    add(anchors.customs,chip('warn',t('lb_customsW',S.pos.filter(p=>p.status==='customs').length)),'purchasing');
+  }
+  if(m==='qc') qcSlots.forEach(s=>{ if(s.lot && s.lot.status!=='pass') add(s.pos,chip(s.lot.status==='hold'?'warn':s.lot.status==='fail'?'bad':'idle',`${bdi(s.lot.id)} · ${s.lot.status==='pending'?t('inspecting'):s.lot.status==='hold'?t('onHold'):t('rejected')}`),'qc'); });
+  if(m==='inventory') S.items.forEach(it=>{ const h=health(it), s=invSlots[it.sku];
+    if(h==='bad'||h==='warn') add(s.pos,chip(h,`${bdi(it.sku)} · ${t('lb_runsOut',inH(S.h+Math.round(cover(it.sku)*24)))}`),'inventory');
+    if(h==='idle' && it.onHand>0) add(s.pos,chip('idle',`${bdi(it.sku)} · ${t('lb_idle',money(it.onHand*it.cost))}`),'inventory'); });
+  if(m==='manufacturing') S.lines.forEach((l,i)=>{ const st=l.status==='run'?'ok':l.status==='slow'?'warn':l.status==='idle'?'idle':'bad';
+    const txt=l.status==='down'?t('lb_mDown',mname(l.id,l.downM)):l.status==='starved'?t('lb_short',iname(l.short)):l.status==='idle'?t('lb_paused'):t('lb_perH',num(l.out[l.out.length-1]||0));
+    add(lineVis[i].pos,chip(st,`${lshort(l.id)} · ${txt}`),'manufacturing'); });
+  if(m==='sales') Object.keys(PRODUCTS).forEach(sku=>{ const bo=S.orders.filter(o=>o.sku===sku&&o.status==='backorder').length;
+    add(fgSlots[sku].pos,chip(bo?'bad':'ok',`${pname(sku)} · ${t('lb_stock',num(S.fg[sku].onHand))}${bo?' · '+t('lb_bo',bo):''}`),'sales'); });
+  if(m==='logistics'){
+    S.ships.filter(s=>s.status==='en route'&&outTrucks[s.id]).forEach(s=>{ const o=S.orders.find(o=>o.id===s.order); const late=S.h+Math.ceil((1-s.progress)*s.transit)>o.dueH;
+      add(outTrucks[s.id].position.clone().setY(5),chip(late?'bad':'ok',`${t('lb_order',cname(o.c))} · ${late?t('late'):t('onTime')}`),'logistics'); });
+    const r=S.orders.filter(o=>o.status==='ready').length; if(r) add(new THREE.Vector3(76,6,18),chip('warn',t('lb_ready',r)),'logistics');
+  }
+  if(m==='hr'){
+    const p=Object.values(S.hr.present).reduce((a,b)=>a+b,0), pl=S.lines.reduce((a,l)=>a+linePlan(l.id),0);
+    add(anchors.hr,chip('ok',t('lb_onShift',p,Math.max(0,pl-p))),'hr');
+    S.lines.forEach((l,i)=>{ add(lineVis[i].pos.clone().add(new THREE.Vector3(14,2,0)),chip(staffFactor(l)<.85?'warn':'ok',t('lb_crew',lshort(l.id),S.hr.present[l.id],linePlan(l.id))),'hr'); });
+  }
+  if(m==='finance'){
+    add(anchors.finance,chip(S.fin.cash>2e6?'ok':'warn',t('lb_cash',money(S.fin.cash))),'finance');
+    const ap=S.payables.filter(p=>p.dueH<S.h).reduce((a,p)=>a+p.amount,0); if(ap) add(anchors.purchasing,chip('bad',t('lb_apOver',money(ap))),'finance');
+    const ar=S.receivables.filter(r=>r.dueH<S.h).reduce((a,r)=>a+r.amount,0); if(ar) add(anchors.sales,chip('warn',t('lb_arOver',money(ar))),'finance');
+  }
+  labelDefs=L;
+  L.forEach((d,i)=>{ const lb=getLabel(i); if(lb.html!==d.html){ lb.el.innerHTML=d.html; lb.html=d.html; } lb.el.className='lab3 '+d.cls; lb.el.onclick=()=>openModule(d.mod); });
+  for(let i=L.length;i<labelPool.length;i++) labelPool[i].el.style.display='none';
+}
+const _v=new THREE.Vector3();
+function placeLabels(){
+  const w=innerWidth,h=innerHeight;
+  labelDefs.forEach((d,i)=>{ const lb=labelPool[i]; _v.copy(d.pos).project(cam);
+    const x=(_v.x*.5+.5)*w, y=(-_v.y*.5+.5)*h; const on=x>-40&&x<w+40&&y>60&&y<h+20;
+    lb.el.style.display=on?'flex':'none'; lb.el.style.left=x+'px'; lb.el.style.top=y+'px'; d.sx=x; d.sy=y; });
+}
+
+/* =====================================================================
+   ALERTS + MORNING BRIEF
+   ===================================================================== */
+function alertsFor(k){
+  switch(k){
+    case 'manufacturing': return S.lines.filter(l=>['down','starved'].includes(l.status)).length;
+    case 'qc': return S.lots.filter(l=>l.status==='hold').length;
+    case 'purchasing': return S.pos.filter(p=>p.delayed&&!['received','qc','rejected'].includes(p.status)).length;
+    case 'inventory': return S.items.filter(i=>health(i)==='bad').length;
+    case 'sales': return S.orders.filter(o=>o.status==='backorder').length;
+    case 'logistics': return S.orders.filter(o=>o.status!=='delivered'&&o.dueH<S.h).length;
+    case 'hr': return S.lines.filter(l=>staffFactor(l)<.85).length;
+    case 'finance': return S.payables.filter(p=>p.dueH<S.h).length;
+    default: return 0;
+  }
+}
+function briefItems(){
+  const out=[];
+  const rm=S.items.filter(i=>!i.dead).map(i=>({i,c:cover(i.sku),inc:onOrder(i.sku)})).sort((a,b)=>a.c-b.c);
+  const r0=rm.find(x=>x.c<SUPPLIERS[x.i.sup].lead+3);
+  if(r0){ const po=S.pos.find(p=>p.sku===r0.i.sku&&!['received','rejected'].includes(p.status)); const c=r0.c.toFixed(1), lead=SUPPLIERS[r0.i.sup].lead;
+    out.push(po?{key:'rm-'+r0.i.sku, sev:3-r0.c/10, text:t('br_protect',bdi(r0.i.sku),inH(S.h+Math.round(r0.c*24))), sub:t('br_protectS',bdi(po.id),inH(S.h+etaH(po)),c), mod:'inventory'}
+              :{key:'rm-'+r0.i.sku, sev:3-r0.c/10, text:t('br_order',bdi(r0.i.sku),dayName(S.h+Math.max(0,Math.round((r0.c-lead)*24)))), sub:t('br_orderS',c,lead), mod:'inventory', act:()=>ACT.createPO(r0.i.sku)}); }
+  const late=S.pos.filter(p=>p.delayed&&!['received','qc','rejected'].includes(p.status)).sort((a,b)=>b.lateBy-a.lateBy)[0];
+  if(late) out.push({key:'po-'+late.id, sev:2.5, text:t('br_chase',bdi(late.id),sname(late.sup)), sub:t('br_chaseS',iname(late.sku),Math.max(1,Math.round(late.lateBy/24)),late.status==='customs'), mod:'purchasing', act:()=>ACT.expedite(late.id)});
+  let worst=null; S.lines.forEach(l=>{ const bom=PRODUCTS[l.product].bom; for(const sku in bom){ const hrs=item(sku).onHand/(bom[sku]*l.rate); if(!worst||hrs<worst.hrs) worst={l,sku,hrs}; } });
+  const down=S.lines.find(l=>l.status==='down');
+  if(down) out.push({key:'down-'+down.id, sev:2.8, text:t('br_down',lshort(down.id)), sub:t('br_downS',mname(down.id,down.downM),down.down), mod:'manufacturing', act:()=>ACT.fix(down.id)});
+  if(worst && worst.hrs<72) out.push({key:'line-'+worst.l.id+worst.sku, sev:2.6-worst.hrs/100, text:t('br_secure',bdi(worst.sku),lshort(worst.l.id)), sub:t('br_secureS',inH(S.h+Math.floor(worst.hrs))), mod:'manufacturing'});
+  const hold=S.lots.find(l=>l.status==='hold'); if(hold) out.push({key:'hold-'+hold.id, sev:2, text:t('br_lot',bdi(hold.id),iname(hold.sku)), sub:reason(hold.r), mod:'qc'});
+  const dead=S.items.filter(i=>i.dead&&i.onHand>0).reduce((a,i)=>a+i.onHand*i.cost,0); if(dead) out.push({key:'dead', sev:1.2, text:t('br_dead',money(dead)), sub:t('br_deadS'), mod:'inventory'});
+  const ap=S.payables.filter(p=>p.dueH<S.h); if(ap.length) out.push({key:'ap', sev:1.6, text:t('br_ap',ap.length), sub:money(ap.reduce((a,p)=>a+p.amount,0)), mod:'finance'});
+  return out.sort((a,b)=>b.sev-a.sev).slice(0,3);
+}
+const briefEl=document.getElementById('brief');
+function renderBrief(){
+  const items=briefItems();
+  briefEl.innerHTML=`<h3><i></i>${AR()?`${t('briefT')} · ${CFG.brandAr}`:`${CFG.brand} · ${t('briefT')}`}</h3><div class="s">${clockStr(S.h)} · ${t('briefS')}</div>`+
+    items.map((it,i)=>`<div class="dec ${S.brief.done[it.key]?'done':''}" data-i="${i}"><span class="ck">${S.brief.done[it.key]?'✓':''}</span><span class="tx">${it.text}<small>${it.sub}</small></span><span class="go">${it.act&&!S.brief.done[it.key]?t('doIt'):t('openIt')}</span></div>`).join('');
+  briefEl.querySelectorAll('.dec').forEach(d=>d.onclick=()=>{ const it=items[+d.dataset.i]; if(it.act&&!S.brief.done[it.key]){ it.act(); S.brief.done[it.key]=true; onTick(); } else openModule(it.mod); });
+}
+const linksSvg=document.getElementById('links');
+function drawLinks(){
+  if(current.key!=='reports'){ if(linksSvg.innerHTML) linksSvg.innerHTML=''; return; }
+  const r=briefEl.getBoundingClientRect(); const bx=r.left+r.width/2, by=r.bottom;
+  linksSvg.setAttribute('viewBox',`0 0 ${innerWidth} ${innerHeight}`);
+  linksSvg.innerHTML=labelDefs.filter(d=>d.sx!=null).map(d=>`<path d="M${d.sx},${d.sy-48} L${bx+(d.sx-bx)*0.15},${by}" fill="none" stroke="#e30613" stroke-width="1.3" stroke-dasharray="4 5" stroke-opacity=".55"><animate attributeName="stroke-dashoffset" from="18" to="0" dur="1s" repeatCount="indefinite"/></path>`).join('');
+}
+
+/* =====================================================================
+   DASHBOARD PANELS
+   ===================================================================== */
+const tile=(label,value,note,cls='')=>`<div class="tile"><span>${label}</span><b class="${cls}">${value}</b>${note?`<em class="${cls}">${note}</em>`:''}</div>`;
+const pill=(text,c)=>`<span class="pill ${c}">${text}</span>`;
+function bars(vals,{h=64,color='#e30613',labels}={}){
+  const w=400, mx=Math.max(...vals,1), bw=w/vals.length;
+  // in RTL, draw right-to-left so the newest bar sits on the left like Arabic reading order
+  const X=i=>AR()? w-(i+1)*bw : i*bw;
+  return `<svg class="chart" viewBox="0 0 ${w} ${h+(labels?14:0)}">${vals.map((v,i)=>{const bh=Math.max(1,v/mx*(h-4)); return `<rect x="${X(i)+1.5}" y="${h-bh}" width="${bw-3}" height="${bh}" rx="2" fill="${Array.isArray(color)?color[i]:color}" opacity="${i===vals.length-1?1:.75}"/>`+(labels?`<text x="${X(i)+bw/2}" y="${h+11}" font-size="9" text-anchor="middle" fill="#9aa0a8" font-family="IBM Plex Sans Arabic, Inter">${labels[i]}</text>`:'');}).join('')}</svg>`;
+}
+function line(vals,fut,{h=80}={}){
+  const all=vals.concat(fut||[]), w=400, mx=Math.max(...all)*1.08, mn=Math.min(...all)*0.9, X=i=>i/(all.length-1)*w, Y=v=>h-(v-mn)/(mx-mn)*(h-6)-3;
+  const p=vals.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join('');
+  const f=fut?fut.map((v,i)=>`${i?'L':'M'}${X(vals.length-1+i).toFixed(1)},${Y(i?v:vals[vals.length-1]).toFixed(1)}`).join(''):'';
+  return `<svg class="chart flip" viewBox="0 0 ${w} ${h}"><path d="${p} L${X(vals.length-1)},${h} L0,${h}Z" fill="#e30613" opacity=".07"/><path d="${p}" fill="none" stroke="#e30613" stroke-width="2"/>${f?`<path d="${f}" fill="none" stroke="#e30613" stroke-width="2" stroke-dasharray="5 4" opacity=".6"/>`:''}</svg>`;
+}
+const btn=(label,act,arg,cls='')=>`<button class="btn sm ${cls}" data-act="${act}" data-arg="${arg??''}">${label}</button>`;
+function oee(){ const tot=S.lines.reduce((a,l)=>a+l.rate,0); const out=S.lines.reduce((a,l)=>a+(l.out.slice(-8).reduce((x,y)=>x+y,0)/Math.max(1,Math.min(8,l.out.length))),0); return Math.min(99,out/tot*100*0.93); }
+const SOST={new:'idle',backorder:'bad',ready:'ok',shipped:'ok',delivered:'ok'};
+
+const PANELS={
+manufacturing(){
+  const out24=S.hist.out.reduce((a,b)=>a+b,0), run=S.lines.filter(l=>l.status==='run'||l.status==='slow').length;
+  return `<div class="grid4">${tile(t('t_oee'),oee().toFixed(1)+'%',null,oee()>80?'ok':'warn')}${tile(t('t_out24'),num(out24),t('units'))}${tile(t('t_running'),`${run}/3`,null,run<3?'warn':'ok')}${tile(t('t_scrap'),(S.qc.scrap/Math.max(1,S.qc.units)*100).toFixed(1)+'%')}</div>
+  <div class="sec"><h4>${t('lines')}</h4><div class="list">${S.lines.map(l=>{
+    const stc={run:'ok',slow:'warn',down:'bad',starved:'bad',idle:'idle'}[l.status];
+    const bom=PRODUCTS[l.product].bom; let worst=null; for(const sku in bom){ const h=item(sku).onHand/(bom[sku]*l.rate); if(!worst||h<worst.h) worst={sku,h}; }
+    const wo=l.wo, pct=wo?Math.min(100,wo.done/wo.qty*100):0;
+    const left=worst.h>240?t('tenPlus'):worst.h<48?t('hrs',Math.floor(worst.h)):t('daysX',(worst.h/24).toFixed(1));
+    return `<div class="rowc col"><div class="line"><div class="main"><div class="t">${lname(l.id)} · ${pname(l.product)}</div>
+    <div class="s">${l.status==='down'?t('mDownLeft',mname(l.id,l.downM),l.down):l.status==='starved'?t('waitingFor',iname(l.short)):t('perHour',num(l.out[l.out.length-1]||0),l.rate,S.hr.present[l.id],linePlan(l.id))}</div></div>${pill(t('st_'+l.status),stc)}</div>
+    <div class="s" style="margin-top:6px;font-size:11px;color:var(--muted)">${wo?`${bdi(wo.id)} · ${num(wo.done)}/${num(wo.qty)}`:t('noWO')}</div><div class="bar"><i style="width:${pct}%"></i></div>
+    <div class="line" style="margin-top:8px"><span class="s" style="flex:1;font-size:11px;color:var(--muted)">${t('material')}: <b class="${worst.h<24?'bad':worst.h<72?'warn':'ok'}">${t('forDays',iname(worst.sku),left)}</b></span>
+    ${l.status==='down'?btn(t('b_maint'),'fix',l.id):''}${btn(l.paused?t('b_resume'):t('b_pause'),'pause',l.id,'gray')}</div></div>`; }).join('')}</div></div>
+  <div class="sec"><h4>${t('plantOut')}</h4>${bars(S.hist.out)}</div>
+  <div class="sec"><h4>${t('woSched')}</h4><table class="t"><tr><th>${t('th_wo')}</th><th>${t('th_line')}</th><th>${t('th_product')}</th><th class="r">${t('th_qty')}</th><th>${t('th_status')}</th></tr>${S.wos.filter(w=>w.status!=='done').sort((a,b)=>a.line.localeCompare(b.line)).map(w=>`<tr><td>${bdi(w.id)}</td><td>${lshort(w.line)}</td><td>${pname(w.product)}</td><td class="r">${num(w.qty)}</td><td>${w.status==='running'?pill(t('st_run'),'ok'):pill(t('queued'),'idle')}</td></tr>`).join('')}</table></div>`;
+},
+qc(){
+  const fpy=100-(S.qc.scrap/Math.max(1,S.qc.units)*100);
+  const pend=S.lots.filter(l=>l.status==='pending'), hold=S.lots.filter(l=>l.status==='hold');
+  const par=Object.entries(S.qc.pareto).sort((a,b)=>b[1]-a[1]);
+  return `<div class="grid4">${tile(t('t_fpy'),fpy.toFixed(1)+'%',null,fpy>97?'ok':'warn')}${tile(t('t_lotsInsp'),pend.length)}${tile(t('t_hold'),hold.length,null,hold.length?'warn':'ok')}${tile(t('t_ncr'),S.ncrs.length,null,S.ncrs.length?'warn':'')}</div>
+  <div class="sec"><h4>${t('incomingLots')}</h4><div class="list">${S.lots.length?S.lots.slice().reverse().map(l=>`<div class="rowc"><div class="main"><div class="t">${bdi(l.id)} · ${iname(l.sku)}</div><div class="s">${bdi(l.po)} · ${num(l.qty)} ${uom(l.sku)} · ${sname(item(l.sku).sup)}${l.r!=null?' · '+reason(l.r):''}</div></div>
+    ${l.status==='pending'?pill(t('inspecting'),'idle')+btn(t('b_inspect'),'inspect',l.id,'gray'):l.status==='hold'?btn(t('b_release'),'release',l.id)+btn(t('b_reject'),'reject',l.id,'ghost'):l.status==='pass'?pill(t('passed'),'ok'):pill(t('rejected'),'bad')}</div>`).join(''):`<div class="note">${t('noLots')}</div>`}</div></div>
+  <div class="sec"><h4>${t('pareto')}</h4>${par.length?bars(par.map(p=>p[1]),{labels:par.map(p=>L_(DEFECTS[p[0]]).split(' ')[0])}):`<div class="note">${t('collecting')}</div>`}</div>
+  <div class="sec"><h4>${t('lineQ')}</h4><table class="t"><tr><th>${t('th_line')}</th><th>${t('th_product')}</th><th class="r">${t('th_checks')}</th><th>${t('th_result')}</th></tr>${S.lines.map(l=>{ const on=l.status==='run'||l.status==='slow'; return `<tr><td>${lshort(l.id)}</td><td>${pname(l.product)}</td><td class="r">${on?12:0}</td><td>${on?pill(t('inSpec'),'ok'):pill(t('noRun'),'idle')}</td></tr>`; }).join('')}</table></div>
+  <div class="sec"><h4>${t('ncrs')}</h4><div class="list">${S.ncrs.slice(-5).reverse().map(n=>`<div class="rowc"><div class="main"><div class="t">${t('ncrLot',bdi(n.id),bdi(n.lot))}</div><div class="s">${reason(n.r)} · ${t('raised')} ${clockStr(n.h)}</div></div>${pill(t('open'),'warn')}</div>`).join('')||`<div class="note">${t('noNcr')}</div>`}</div></div>`;
+},
+purchasing(){
+  const open=S.pos.filter(p=>!['received','rejected'].includes(p.status));
+  const late=open.filter(p=>p.delayed), cus=open.filter(p=>p.status==='customs');
+  const spend=S.pos.filter(p=>p.createdH>S.h-24*30).reduce((a,p)=>a+p.value,0);
+  const sug=suggestions();
+  return `<div class="grid4">${tile(t('t_openPO'),open.length)}${tile(t('t_late'),late.length,null,late.length?'bad':'ok')}${tile(t('t_customs'),cus.length,null,cus.length?'warn':'')}${tile(t('t_spend'),money(spend))}</div>
+  <div class="sec"><h4>${t('inbound')}</h4><div class="list">${open.sort((a,b)=>(b.delayed-a.delayed)||(b.progress-a.progress)).map(p=>{
+    const st=p.status==='qc'?[t('atQC'),'idle']:p.delayed?[t('lateD',Math.max(1,Math.round(p.lateBy/24))),'bad']:p.status==='customs'?[t('customs'),'warn']:p.status==='ordered'?[t('ordered'),'idle']:[t('onTime'),'ok'];
+    const s=SUPPLIERS[p.sup];
+    return `<div class="rowc col"><div class="line"><div class="main"><div class="t">${bdi(p.id)} · ${iname(p.sku)}</div><div class="s">${sname(p.sup)} (${s.country})${p.imp?' · '+t('import'):''} · ${num(p.qty)} ${uom(p.sku)} · ${money(p.value)}</div></div>${pill(st[0],st[1])}</div>
+    <div class="bar"><i style="width:${p.progress*100}%;background:${p.delayed?HEX.bad:p.status==='customs'?HEX.warn:HEX.ok}"></i></div>
+    <div class="line" style="margin-top:6px"><span class="s" style="flex:1;font-size:11px;color:var(--muted)">${p.status==='qc'?t('unloaded'):`${t('eta')} ${inH(S.h+etaH(p))}${p.delayed?` · ${t('wasDue')} ${inH(p.dueH)}`:''}`}</span>${p.delayed?btn(t('b_expedite'),'expedite',p.id):''}</div></div>`; }).join('')}</div></div>
+  <div class="sec"><h4>${t('mrp')} <small>${t('itemsN',sug.length)}</small></h4><div class="list">${sug.map(s=>{ const it=item(s.sku); return `<div class="rowc"><div class="main"><div class="t">${iname(s.sku)}</div><div class="s">${t('coverLead',cover(s.sku).toFixed(1),SUPPLIERS[it.sup].lead,num(onOrder(s.sku)))}</div></div>${btn(t('b_order',num(s.qty)),'createPO',s.sku)}</div>`; }).join('')||`<div class="note">${t('nothingReorder')}</div>`}</div></div>
+  <div class="sec"><h4>${t('scorecard')}</h4><table class="t"><tr><th>${t('th_sup')}</th><th>${t('th_origin')}</th><th class="r">${t('th_lead')}</th><th class="r">${t('th_ontime')}</th></tr>${Object.entries(SUPPLIERS).map(([k,s])=>{ const ps=S.pos.filter(p=>p.sup===k); const ot=ps.length?Math.round(ps.filter(p=>!p.delayed).length/ps.length*100):100; return `<tr><td>${sname(k)}</td><td>${s.country}</td><td class="r">${s.lead} ${t('d')}</td><td class="r ${ot<80?'bad':ot<95?'warn':'ok'}">${ot}%</td></tr>`; }).join('')}</table></div>`;
+},
+inventory(){
+  const val=S.items.reduce((a,i)=>a+i.onHand*i.cost,0);
+  const low=S.items.filter(i=>['bad','warn'].includes(health(i)));
+  const dead=S.items.filter(i=>i.dead).reduce((a,i)=>a+i.onHand*i.cost,0);
+  const weeks=6;
+  const heat=S.items.filter(i=>!i.dead).map(i=>{ const u=dailyUse(i.sku); let on=i.onHand; const cells=[];
+    for(let w=0;w<weeks;w++){ const end=S.h+(w+1)*168; on+=S.pos.filter(p=>p.sku===i.sku&&!['received','rejected'].includes(p.status)&&S.h+etaH(p)<=end&&S.h+etaH(p)>end-168).reduce((a,p)=>a+p.qty,0); on-=u*7; const c=on/Math.max(1,u); cells.push(on<=0?'bad':c<5?'warn':'ok'); }
+    return {i,cells}; });
+  const order={bad:0,warn:1,idle:2,ok:3};
+  return `<div class="grid4">${tile(t('t_invVal'),money(val))}${tile(t('t_below'),low.length,null,low.length?'warn':'ok')}${tile(t('t_idleMoney'),money(dead),null,dead?'idle':'')}${tile(t('t_items'),S.items.length)}</div>
+  <div class="sec"><h4>${t('heatT')}</h4>
+  <div class="heat" style="grid-template-columns:90px repeat(${weeks},1fr)"><div class="hd"></div>${Array.from({length:weeks},(_,w)=>`<div class="hd">${t('wk')}${Math.floor(S.h/168)+w+1}</div>`).join('')}
+  ${heat.map(r=>`<div class="lab">${r.i.sku}</div>${r.cells.map(c=>`<div style="background:${HEX[c]}"></div>`).join('')}`).join('')}</div>
+  <div class="legend"><span><i style="background:${HEX.ok}"></i>${t('lg_cov')}</span><span><i style="background:${HEX.warn}"></i>${t('lg_low')}</span><span><i style="background:${HEX.bad}"></i>${t('lg_out')}</span><span><i style="background:${HEX.idle}"></i>${t('lg_idle')}</span></div></div>
+  <div class="sec"><h4>${t('stockList')}</h4><div class="list">${S.items.slice().sort((a,b)=>order[health(a)]-order[health(b)]).map(i=>{ const h=health(i), c=cover(i.sku);
+    return `<div class="rowc"><div class="main"><div class="t">${bdi(i.sku)} · ${L_(i)}</div><div class="s">${num(i.onHand)} ${uom(i.sku)} · ${money(i.onHand*i.cost)}${i.dead?' · '+t('noDemand'):` · ${c===Infinity?'—':t('daysCover',c.toFixed(1))} · ${t('onOrderX',num(onOrder(i.sku)))}`}</div></div>
+    ${h==='idle'?(i.onHand>0?btn(t('b_surplus'),'liquidate',i.sku,'gray'):pill(t('cleared'),'ok')):h==='ok'?pill(t('healthy'),'ok'):(onOrder(i.sku)?pill(h==='bad'?t('critPO'):t('lowPO'),h):btn(t('b_reorder'),'createPO',i.sku))}</div>`; }).join('')}</div></div>
+  <div class="sec"><h4>${t('fg')}</h4><table class="t"><tr><th>${t('th_product')}</th><th class="r">${t('th_onhand')}</th><th class="r">${t('th_openOrders')}</th><th class="r">${t('th_value')}</th></tr>${Object.keys(PRODUCTS).map(s=>{ const op=S.orders.filter(o=>o.sku===s&&['new','backorder'].includes(o.status)).reduce((a,o)=>a+o.qty,0); return `<tr><td>${pname(s)}</td><td class="r">${num(S.fg[s].onHand)}</td><td class="r ${op>S.fg[s].onHand?'bad':''}">${num(op)}</td><td class="r">${money(S.fg[s].onHand*PRODUCTS[s].price*0.6)}</td></tr>`; }).join('')}</table></div>`;
+},
+sales(){
+  const open=S.orders.filter(o=>o.status!=='delivered');
+  const backlog=open.reduce((a,o)=>a+o.value,0);
+  const del=S.orders.filter(o=>o.status==='delivered'); const otif=del.length?Math.round(del.filter(o=>o.delH<=o.dueH).length/del.length*100):96;
+  const d=S.hist.demand; const avg=d.slice(-7).reduce((a,b)=>a+b,0)/Math.min(7,d.length); const trend=(d[d.length-1]-d[Math.max(0,d.length-8)])/7;
+  const fc=Array.from({length:8},(_,i)=>Math.round(avg+trend*i*0.5));
+  return `<div class="grid4">${tile(t('t_rev'),money(S.fin.revMTD))}${tile(t('t_openOrd'),open.length)}${tile(t('t_backlog'),money(backlog))}${tile(t('t_otif'),otif+'%',null,otif>=95?'ok':'warn')}</div>
+  <div class="sec"><h4>${t('demandT')} <small>${t('unitsDay')}</small></h4>${line(d,fc)}<div class="note">${t('fcNote',num(S.lines.reduce((a,l)=>a+l.rate*24,0)))}</div></div>
+  <div class="sec"><h4>${t('orders')} ${btn(t('b_sim'),'newOrder','','gray')}</h4><div class="list">${open.sort((a,b)=>a.dueH-b.dueH).map(o=>`<div class="rowc"><div class="main"><div class="t">${bdi(o.id)} · ${cname(o.c)}</div><div class="s">${num(o.qty)} × ${pname(o.sku)} · ${money(o.value)} · ${t('due')} ${inH(o.dueH)}</div></div>
+    ${pill(t('so_'+o.status),o.status!=='delivered'&&o.dueH<S.h?'bad':SOST[o.status])}${(o.status==='new'||o.status==='backorder')?btn(t('b_allocate'),'allocate',o.id):''}</div>`).join('')}</div></div>
+  <div class="sec"><h4>${t('salesByProd')}</h4>${bars(Object.keys(PRODUCTS).map(s=>open.filter(o=>o.sku===s).reduce((a,o)=>a+o.value,0)),{labels:Object.keys(PRODUCTS).map(s=>pname(s).split(' ').slice(0,2).join(' ')),color:['#e30613','#f06a73','#f7a8ad']})}</div>`;
+},
+logistics(){
+  const ready=S.orders.filter(o=>o.status==='ready'), en=S.ships.filter(s=>s.status==='en route');
+  const delToday=S.orders.filter(o=>o.status==='delivered'&&S.h-o.delH<24);
+  const ot=delToday.length?Math.round(delToday.filter(o=>o.delH<=o.dueH).length/delToday.length*100):100;
+  const used=FLEET-trucksFree();
+  return `<div class="grid4">${tile(t('t_ready'),ready.length,null,ready.length>3?'warn':'')}${tile(t('t_out'),en.length)}${tile(t('t_del24'),delToday.length)}${tile(t('t_otd'),ot+'%',null,ot>=95?'ok':'warn')}</div>
+  <div class="sec"><h4>${t('fleet',trucksFree(),FLEET)}</h4><div style="display:flex;gap:4px">${Array.from({length:FLEET},(_,i)=>`<div style="flex:1;height:26px;border-radius:5px;background:${i<used?HEX.red:'#eceef1'};display:grid;place-items:center;color:${i<used?'#fff':'#9aa0a8'};font-size:10px;font-weight:700">TR-${10+i}</div>`).join('')}</div></div>
+  <div class="sec"><h4>${t('readyDisp')}</h4><div class="list">${ready.map(o=>`<div class="rowc"><div class="main"><div class="t">${bdi(o.id)} · ${cname(o.c)}</div><div class="s">${num(o.qty)} × ${pname(o.sku)} · ${t('route',o.region)} · ${t('due')} ${inH(o.dueH)}</div></div>${btn(t('b_dispatch'),'dispatch',o.id)}</div>`).join('')||`<div class="note">${t('dockClear')}</div>`}</div></div>
+  <div class="sec"><h4>${t('onRoad')}</h4><div class="list">${en.map(s=>{ const o=S.orders.find(o=>o.id===s.order); const eta=S.h+Math.ceil((1-s.progress)*s.transit); const late=eta>o.dueH;
+    return `<div class="rowc col"><div class="line"><div class="main"><div class="t">${bdi(s.id)} · ${cname(o.c)}</div><div class="s">${bdi(s.truck)} · ${bdi(o.id)} · ${t('eta')} ${inH(eta)}</div></div>${pill(late?t('late'):t('onTime'),late?'bad':'ok')}</div><div class="bar"><i style="width:${s.progress*100}%;background:${late?HEX.bad:HEX.ok}"></i></div></div>`; }).join('')||`<div class="note">${t('noTrucksOut')}</div>`}</div></div>
+  <div class="sec"><h4>${t('routes')}</h4><table class="t"><tr><th>${t('th_route')}</th><th class="r">${t('th_onroad')}</th><th class="r">${t('th_transit')}</th></tr><tr><td>${t('r_east')}</td><td class="r">${en.filter(s=>s.region==='east').length}</td><td class="r">9 ${t('h')}</td></tr><tr><td>${t('r_south')}</td><td class="r">${en.filter(s=>s.region==='south').length}</td><td class="r">11 ${t('h')}</td></tr></table></div>`;
+},
+hr(){
+  const pres=Object.values(S.hr.present).reduce((a,b)=>a+b,0), plan=S.lines.reduce((a,l)=>a+linePlan(l.id),0), absent=Math.max(0,plan-pres);
+  const hod=S.h%24; const sh=S.hr.shifts.find(s=>s.from<s.to?hod>=s.from&&hod<s.to:hod>=s.from||hod<s.to);
+  const under=S.lines.filter(l=>staffFactor(l)<.85);
+  return `<div class="grid4">${tile(t('t_head'),S.hr.headcount)}${tile(t('t_floor'),`${pres}/${plan}`,t('shiftX',sh.id),pres<plan*.9?'warn':'ok')}${tile(t('t_abs'),(absent/plan*100).toFixed(1)+'%',null,absent/plan>.08?'warn':'ok')}${tile(t('t_ot'),num(S.hr.overtime+212))}</div>
+  <div class="sec"><h4>${t('crewT',sh.id)} ${under.length&&!S.hr.otActive?btn(t('b_overtime'),'overtime',''):''}</h4><div class="list">${S.lines.map(l=>{ const f=staffFactor(l); return `<div class="rowc"><div class="main"><div class="t">${lname(l.id)}</div><div class="s">${t('presentOf',S.hr.present[l.id],linePlan(l.id),Math.round(f*100))}</div><div class="bar"><i style="width:${f*100}%;background:${f<.85?HEX.warn:HEX.ok}"></i></div></div>${pill(f<.85?t('short'):t('full'),f<.85?'warn':'ok')}</div>`; }).join('')}</div></div>
+  <div class="sec"><h4>${t('shiftPat')}</h4><table class="t"><tr><th>${t('th_shift')}</th><th>${t('th_hours')}</th><th class="r">${t('th_planned')}</th><th>${t('th_status')}</th></tr>${S.hr.shifts.map(s=>`<tr><td>${s.id}</td><td><span class="ltr">${String(s.from).padStart(2,'0')}:00–${String(s.to).padStart(2,'0')}:00</span></td><td class="r">${s.plan}</td><td>${s===sh?pill(t('onNow'),'ok'):pill(t('off'),'idle')}</td></tr>`).join('')}</table></div>
+  <div class="sec"><h4>${t('certs')}</h4><div class="list">${CERTS.map(c=>`<div class="rowc"><div class="main"><div class="t">${L_(c.who)}</div><div class="s">${L_(c.what)}</div></div>${pill(`${c.days} ${t('d')}`,c.days<10?'warn':'idle')}</div>`).join('')}</div></div>
+  <div class="grid4" style="margin-top:14px">${tile(t('t_safety'),S.hr.safetyDays,null,'ok')}${tile(t('t_roles'),S.hr.openRoles)}</div>`;
+},
+finance(){
+  const f=S.fin, gm=(f.revMTD-f.cogsMTD)/f.revMTD*100, net=f.revMTD-f.cogsMTD-f.laborMTD-f.ohMTD;
+  const ar=S.receivables.reduce((a,r)=>a+r.amount,0), ap=S.payables.reduce((a,p)=>a+p.amount,0);
+  return `<div class="grid4">${tile(t('t_cash'),money(f.cash),null,f.cash>2e6?'ok':'warn')}${tile(t('t_gm'),gm.toFixed(1)+'%')}${tile(t('t_ar'),money(ar))}${tile(t('t_ap'),money(ap))}</div>
+  <div class="sec"><h4>${t('cashT')}</h4>${line(f.cashHist.concat([f.cash]))}</div>
+  <div class="sec"><h4>${t('pnl')}</h4><table class="t"><tr><td>${t('pl_rev')}</td><td class="r">${money(f.revMTD)}</td></tr><tr><td>${t('pl_cogs')}</td><td class="r">−${money(f.cogsMTD)}</td></tr><tr><td><b>${t('pl_gp')}</b></td><td class="r"><b>${money(f.revMTD-f.cogsMTD)}</b></td></tr><tr><td>${t('pl_lab')}</td><td class="r">−${money(f.laborMTD)}</td></tr><tr><td>${t('pl_oh')}</td><td class="r">−${money(f.ohMTD)}</td></tr><tr><td><b>${t('pl_op')}</b></td><td class="r ${net<0?'bad':'ok'}"><b>${money(net)}</b></td></tr></table></div>
+  <div class="sec"><h4>${t('apT')}</h4><div class="list">${S.payables.slice().sort((a,b)=>a.dueH-b.dueH).map(p=>`<div class="rowc"><div class="main"><div class="t">${bdi(p.id)} · ${sname(p.sup)}</div><div class="s">${money(p.amount)} · ${t('due')} ${inH(p.dueH)}</div></div>${p.dueH<S.h?pill(t('overdue'),'bad'):''}${btn(t('b_pay'),'pay',p.id,p.dueH<S.h?'':'gray')}</div>`).join('')||`<div class="note">${t('allPaid')}</div>`}</div></div>
+  <div class="sec"><h4>${t('arT')}</h4><div class="list">${S.receivables.slice().sort((a,b)=>a.dueH-b.dueH).map(r=>`<div class="rowc"><div class="main"><div class="t">${bdi(r.id)} · ${cname(r.c)}</div><div class="s">${money(r.amount)} · ${t('due')} ${inH(r.dueH)}${r.rem?' · '+t('remSent',r.rem):''}</div></div>${r.dueH<S.h?pill(t('overdue'),'bad'):''}${btn(t('b_remind'),'remind',r.id,'gray')}</div>`).join('')||`<div class="note">${t('nothingOut')}</div>`}</div></div>`;
+},
+reports(){
+  const rows=MODULES.filter(m=>m.key!=='reports').map((m,i)=>{ const a=alertsFor(m.key); return `<tr data-mod="${m.key}" style="cursor:pointer"><td><b>${i+1}</b> ${mN(m.key)}</td><td class="r">${a?pill(t('alertsN',a),'bad'):pill(t('okS'),'ok')}</td></tr>`; }).join('');
+  return `<div class="grid4">${tile(t('t_oee'),oee().toFixed(1)+'%')}${tile(t('t_cash'),money(S.fin.cash))}${tile(t('t_alerts'),MODULES.reduce((a,m)=>a+alertsFor(m.key),0),null,'bad')}${tile(t('t_rev'),money(S.fin.revMTD))}</div>
+  <div class="sec"><h4>${t('statusBy')}</h4><table class="t">${rows}</table><div class="note">${t('clickNote')}</div></div>
+  <div class="sec"><h4>${t('dl')}</h4><div class="list">${t('rep').map(r=>`<div class="rowc"><div class="main"><div class="t">${r[1]}</div><div class="s">${r[2]}</div></div>${btn('CSV ↓','csv',r[0],'gray')}</div>`).join('')}</div></div>
+  <div class="sec"><h4>${t('log')}</h4><div class="list">${S.events.slice(0,12).map(e=>`<div class="rowc"><span class="pill ${e.level}" style="padding:3px"></span><div class="main"><div class="t" style="font-weight:500">${evText(e)}</div><div class="s">${clockStr(e.h)}</div></div></div>`).join('')}</div></div>`;
+},
+};
+
+function downloadCSV(kind){
+  const A=AR(); let rows=[];
+  if(kind==='production') rows=[A?['الخط','المنتج','الحالة','المعدل/س','آخر ساعة','أمر التشغيل','المنجز','الكمية']:['Line','Product','Status','Rate/h','Last hour','WO','WO done','WO qty'],...S.lines.map(l=>[lname(l.id),pname(l.product),t('st_'+l.status),l.rate,l.out[l.out.length-1]||0,l.wo?.id,l.wo?.done,l.wo?.qty])];
+  if(kind==='inventory') rows=[A?['الكود','الصنف','المتاح','الوحدة','تكلفة الوحدة','القيمة','أيام التغطية','مطلوب','الحالة']:['SKU','Item','On hand','UoM','Unit cost','Value','Days cover','On order','Status'],...S.items.map(i=>[i.sku,L_(i),Math.round(i.onHand),uom(i.sku),i.cost,Math.round(i.onHand*i.cost),cover(i.sku)===Infinity?'':cover(i.sku).toFixed(1),onOrder(i.sku),health(i)])];
+  if(kind==='suppliers') rows=[A?['أمر الشراء','المورد','الصنف','الكمية','القيمة','الحالة','متأخر','ساعات للوصول']:['PO','Supplier','Item','Qty','Value','Status','Delayed','ETA hours'],...S.pos.map(p=>[p.id,sname(p.sup),iname(p.sku),p.qty,Math.round(p.value),p.status,p.delayed,etaH(p)])];
+  if(kind==='sales') rows=[A?['الطلب','العميل','المنتج','الكمية','القيمة','الحالة','الاستحقاق']:['Order','Customer','Product','Qty','Value','Status','Due'],...S.orders.map(o=>[o.id,cname(o.c),pname(o.sku),o.qty,o.value,t('so_'+o.status),clockStr(o.dueH)])];
+  if(kind==='finance') rows=[A?['البند','المبلغ']:['Line','Amount'],[t('t_cash'),Math.round(S.fin.cash)],[t('pl_rev'),Math.round(S.fin.revMTD)],[t('pl_cogs'),Math.round(S.fin.cogsMTD)],[t('pl_lab'),Math.round(S.fin.laborMTD)],[t('pl_oh'),Math.round(S.fin.ohMTD)],[t('t_ar'),Math.round(S.receivables.reduce((a,r)=>a+r.amount,0))],[t('t_ap'),Math.round(S.payables.reduce((a,p)=>a+p.amount,0))]];
+  const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');   // BOM so Excel opens Arabic correctly
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=`${CFG.brand.toLowerCase()}-${kind}-day${Math.floor(S.h/24)+1}.csv`; a.click();
+}
+
+/* =====================================================================
+   UI WIRING
+   ===================================================================== */
+const modsEl=document.getElementById('mods');
+let current=MODULES[0];
+const bodyEl=document.getElementById('body');
+function buildRail(){
+  modsEl.innerHTML='';
+  MODULES.forEach((m,i)=>{ const b=document.createElement('button'); b.className='mod'+(m===current?' on':''); b.dataset.k=m.key; b.innerHTML=`<span class="n">${i+1}</span><span>${mN(m.key)}</span><span class="badge"></span>`; b.onclick=()=>{ stopTour(); openModule(m.key); }; modsEl.appendChild(b); });
+}
+function applyStatic(){
+  document.documentElement.lang=LANG; document.documentElement.dir=AR()?'rtl':'ltr';
+  document.querySelectorAll('[data-i]').forEach(el=>el.textContent=t(el.dataset.i));
+  document.getElementById('brandName').textContent=AR()?CFG.brandAr:CFG.brand;
+  document.getElementById('plantName').textContent=AR()?CFG.plantAr:CFG.plant;
+  document.getElementById('langBtn').textContent=t('langBtn');
+  document.getElementById('tourBtn').textContent=tourT?t('stop'):t('tour');
+  document.title=AR()?`${CFG.brandAr} · التوأم الرقمي للمصنع`:`${CFG.brand} Factory Twin`;
+  buildRail();
+}
+let lastHTML='', holdRender=false, pendingRender=false;
+function renderPanel(){
+  const i=MODULES.indexOf(current);
+  document.getElementById('pEy').textContent=t('moduleOf',i+1);
+  document.getElementById('pTitle').textContent=mN(current.key);
+  document.getElementById('pSub').textContent=mS(current.key);
+  const html=PANELS[current.key]();
+  if(html===lastHTML) return;
+  if(holdRender){ pendingRender=true; return; }   // don't swap buttons out from under the cursor
+  lastHTML=html; const st=bodyEl.scrollTop; bodyEl.innerHTML=html; bodyEl.scrollTop=st;
+}
+bodyEl.addEventListener('pointerover',e=>{ if(e.target.closest('[data-act],[data-mod]')) holdRender=true; });
+bodyEl.addEventListener('pointerout',e=>{ if(e.target.closest('[data-act],[data-mod]') && !e.relatedTarget?.closest?.('[data-act],[data-mod]')){ holdRender=false; if(pendingRender){ pendingRender=false; renderPanel(); } } });
+bodyEl.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(b){ ACT[b.dataset.act](b.dataset.arg); holdRender=false; onTick(); return; }
+  const r=e.target.closest('[data-mod]'); if(r) openModule(r.dataset.mod);
+});
+function openModule(key){
+  const m=MODULES.find(m=>m.key===key); const changed=m!==current; current=m;
+  const i=MODULES.indexOf(m);
+  [...modsEl.children].forEach(b=>b.classList.toggle('on',b.dataset.k===key));
+  document.getElementById('chN').textContent=i+1; document.getElementById('chT').textContent=mN(m.key);
+  gsap.fromTo('#chapter',{y:-8,opacity:0},{y:0,opacity:1,duration:.4,ease:'power3.out'});
+  if(changed){ bodyEl.scrollTop=0; lastHTML=''; holdRender=false; }
+  renderPanel(); buildLabels();
+  if(changed) gsap.fromTo(bodyEl.children,{opacity:0,y:10},{opacity:1,y:0,duration:.45,stagger:.04,ease:'power3.out'});
+  const [x,z,zoom]=m.cam;
+  gsap.to(rig,{x,z,zoom,duration:1.6,ease:'power3.inOut',overwrite:true});
+  if(key==='reports'){ renderBrief(); briefEl.style.display='block'; document.getElementById('chapter').style.display='none'; if(changed) gsap.fromTo(briefEl,{opacity:0,y:-12},{opacity:1,y:0,duration:.6,delay:.9,ease:'power3.out'}); }
+  else { briefEl.style.display='none'; document.getElementById('chapter').style.display='flex'; }
+}
+function updateTop(){
+  document.getElementById('clock').textContent=clockStr(S.h);
+  document.getElementById('kOee').textContent=oee().toFixed(1)+'%';
+  document.getElementById('kCash').textContent=money(S.fin.cash);
+  document.getElementById('kDue').textContent=S.orders.filter(o=>o.status!=='delivered'&&o.status!=='shipped'&&o.dueH-S.h<24).length;
+  let tot=0; [...modsEl.children].forEach(b=>{ const a=alertsFor(b.dataset.k); tot+=a; b.querySelector('.badge').textContent=a||''; });
+  document.getElementById('kAlerts').textContent=tot;
+}
+document.getElementById('kAlertsBox').onclick=()=>openModule('reports');
+function onTick(){ sync3D(); updateTop(); renderPanel(); buildLabels(); if(current.key==='reports') renderBrief(); }
+
+function setLang(l){
+  LANG=l; try{ localStorage.setItem('twin-lang',l); }catch(e){}
+  applyStatic(); lastHTML=''; holdRender=false;
+  labelPool.forEach(p=>p.html='');
+  openModule(current.key); updateTop();
+}
+document.getElementById('langBtn').onclick=()=>setLang(AR()?'en':'ar');
+
+let tickTimer=null;
+function setSpeed(s){ S.speed=s; [...document.querySelectorAll('#speed button')].forEach(b=>b.classList.toggle('on',+b.dataset.s===s)); clearInterval(tickTimer); if(s>0) tickTimer=setInterval(tick,1800/s); }
+document.querySelectorAll('#speed button').forEach(b=>b.onclick=()=>setSpeed(+b.dataset.s));
+const autoTog=document.getElementById('autoTog');
+document.getElementById('autoRow').onclick=()=>{ S.auto=!S.auto; autoTog.classList.toggle('on',S.auto); toast(S.auto?t('autoOn'):t('autoOff'),'ok'); };
+document.getElementById('resetBtn').onclick=()=>{ Object.values(inTrucks).forEach(x=>scene.remove(x)); Object.values(outTrucks).forEach(x=>scene.remove(x)); for(const k in inTrucks) delete inTrucks[k]; for(const k in outTrucks) delete outTrucks[k]; initState(); autoTog.classList.add('on'); lastHTML=''; onTick(); toast(t('resetDone'),'ok'); };
+let tourT=null; const tourBtn=document.getElementById('tourBtn');
+function stopTour(){ if(tourT){ clearInterval(tourT); tourT=null; tourBtn.textContent=t('tour'); } }
+tourBtn.onclick=()=>{ if(tourT){ stopTour(); return; } let i=0; openModule(MODULES[0].key); tourT=setInterval(()=>{ i++; if(i>=MODULES.length){ stopTour(); return; } openModule(MODULES[i].key); },6500); tourBtn.textContent=t('stop'); };
+
+/* =====================================================================
+   CAMERA + RENDER LOOP
+   ===================================================================== */
+const rig={x:0,z:-6,zoom:0.3,az:45,el:35};
+const _r=new THREE.Vector3(),_u=new THREE.Vector3();
+function placeCamera(){
+  const az=THREE.MathUtils.degToRad(rig.az), el=THREE.MathUtils.degToRad(rig.el), D=300;
+  cam.position.set(rig.x+Math.sin(az)*Math.cos(el)*D, Math.sin(el)*D, rig.z+Math.cos(az)*Math.cos(el)*D);
+  const fz = innerWidth>900
+    ? Math.max(0.42, Math.min(1.1, (innerWidth-680)/760)) * Math.min(1.1, innerHeight/820)
+    : Math.max(0.5, Math.min(1, innerWidth/520));
+  const z=rig.zoom*fz;
+  cam.lookAt(rig.x,0,rig.z); cam.zoom=z; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+  // keep the focus centred in the free area between rail and panel (mirrored in RTL)
+  const wpp=(VIEW/z)/innerHeight; let dx=0, dy=0;
+  if(innerWidth>900){ dx=(440-206)/2*(AR()?-1:1); dy=current.key==='reports'?Math.min(150,innerHeight*0.16):0; } else { dy=innerHeight*0.2; }
+  _r.setFromMatrixColumn(cam.matrixWorld,0); _u.setFromMatrixColumn(cam.matrixWorld,1);
+  cam.position.addScaledVector(_r,dx*wpp).addScaledVector(_u,dy*wpp); cam.updateMatrixWorld();
+  sun.position.set(rig.x-70,140,rig.z+50); sun.target.position.set(rig.x,0,rig.z);
+}
+const clk=new THREE.Clock(); let TT=0;
+function frame(){
+  const dt=Math.min(clk.getDelta(),.05); TT+=dt;
+  placeCamera();
+  S.lines.forEach((l,li)=>{ const v=lineVis[li]; const sp=l.status==='run'?3:l.status==='slow'?1.6:0; v.off=(v.off+sp*dt)%4;
+    v.items.forEach((b,i)=>{ b.position.x=-26+((i*4+v.off)%52); });
+    v.ms.forEach((m,mi)=>{ m.lb.visible=!m.blink||Math.sin(TT*8)>-0.2; m.g.position.y=sp>0?Math.max(0,Math.sin(TT*10+mi))*0.04:0; }); });
+  for(const id in inTrucks){ const p=S.pos.find(p=>p.id===id); if(!p) continue; const tk=inTrucks[id]; const {path,d}=poDist(p);
+    if(tk.userData.d<0) tk.userData.d=d; tk.userData.d+=(d-tk.userData.d)*Math.min(1,dt*2); const q=path.at(tk.userData.d);
+    tk.position.set(q.x,0,q.z); tk.userData.ang=lerpAng(tk.userData.ang,q.ang,.15); tk.rotation.y=tk.userData.ang; tk.scale.setScalar(.8); }
+  for(const id in outTrucks){ const s=S.ships.find(s=>s.id===id); if(!s) continue; const tk=outTrucks[id]; const path=s.region==='east'?eastPath:southPath; const d=s.progress*path.total;
+    if(tk.userData.d<0) tk.userData.d=0; tk.userData.d+=(d-tk.userData.d)*Math.min(1,dt*2); const q=path.at(tk.userData.d);
+    tk.position.set(q.x,0,q.z); tk.userData.ang=lerpAng(tk.userData.ang,q.ang,.15); tk.rotation.y=tk.userData.ang; }
+  qcSlots.forEach(s=>{ s.top.scale.y=(s.lot&&s.lot.status==='pending')?0.85+Math.sin(TT*4)*0.15:1; });
+  const hod=S.h%24, busy=[5,6,13,14,21,22].includes(hod);
+  people.forEach((p,i)=>{ const u=p.userData; if(i>(busy?39:8)){ p.visible=false; return; } p.visible=true; u.t=(u.t+u.sp*dt*(busy?1.6:1))%1;
+    const a=new THREE.Vector3(-70+u.lane,0,44), b=new THREE.Vector3(-38,0,22+u.lane); p.position.lerpVectors(a,b,u.t); p.rotation.y=Math.atan2(-(b.z-a.z),b.x-a.x)-Math.PI/2; });
+  placeLabels(); drawLinks();
+  renderer.render(scene,cam);
+  requestAnimationFrame(frame);
+}
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+initState();
+applyStatic();
+sync3D(); updateTop();
+openModule('manufacturing');
+rig.zoom=0.3;
+gsap.to(rig,{zoom:MODULES[0].cam[2],duration:2.2,ease:'power3.inOut',delay:.3});
+setSpeed(1);
+{ const ld=document.getElementById('loader'); setTimeout(()=>{ ld.style.opacity=0; setTimeout(()=>ld.remove(),700); },400); }
+requestAnimationFrame(()=>{ frame();
+  gsap.from('#top',{y:-60,duration:.8,ease:'power3.out',delay:.2}); gsap.from('#rail',{opacity:0,duration:.8,ease:'power3.out',delay:.5}); gsap.from('#panel',{opacity:0,duration:.8,ease:'power3.out',delay:.6}); });
+setTimeout(()=>toast(t('tip'),'ok'),2500);
+</script>
+</body>
+</html>

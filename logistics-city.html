@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halden Logistics City</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#e30613; --red-dark:#b8040f; --ink:#1d1f23; --muted:#6b7079;
+    --bg:#f2f3f5; --card:#ffffff; --line:#e6e8eb;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{height:700vh}
+  canvas#scene{position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:0}
+
+  /* header */
+  header{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;gap:28px;
+    padding:14px 28px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-style:italic;font-size:20px;letter-spacing:-.02em;color:var(--red);text-decoration:none}
+  .logo i{width:30px;height:30px;border-radius:7px;background:var(--red);display:grid;place-items:center;color:#fff;font-style:italic;font-size:16px}
+  nav{display:flex;gap:22px;margin-left:12px}
+  nav a{font-size:13.5px;font-weight:500;color:var(--ink);text-decoration:none;opacity:.8}
+  nav a:hover{opacity:1;color:var(--red)}
+  .hdr-cta{margin-left:auto;display:flex;gap:10px;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:8px;border:0;cursor:pointer;font:600 13px Inter,sans-serif;
+    padding:10px 16px;border-radius:6px;background:var(--red);color:#fff;text-decoration:none;transition:background .2s,transform .2s}
+  .btn:hover{background:var(--red-dark);transform:translateY(-1px)}
+  .btn.ghost{background:#fff;color:var(--red);box-shadow:inset 0 0 0 1.5px var(--red)}
+  .btn.ghost:hover{background:#fff5f5}
+  .lang{font-size:12.5px;font-weight:600;color:var(--muted)}
+
+  /* info card */
+  .card{position:fixed;left:28px;bottom:96px;z-index:10;width:380px;background:var(--card);border-radius:10px;
+    padding:26px 26px 22px;box-shadow:0 20px 50px -20px rgba(20,22,30,.25),0 2px 6px rgba(20,22,30,.06)}
+  .card .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red)}
+  .card .eyebrow::before{content:"";width:18px;height:2px;background:var(--red)}
+  .card h1{font-size:30px;line-height:1.12;font-weight:700;letter-spacing:-.025em;margin:12px 0 12px;color:var(--red)}
+  .card p{font-size:14px;line-height:1.55;color:var(--muted)}
+  .card .row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .stats{display:flex;gap:22px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .stats b{display:block;font-size:19px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+  .stats span{font-size:11.5px;color:var(--muted)}
+
+  /* bottom chapter bar */
+  .chapters{position:fixed;left:28px;right:28px;bottom:24px;z-index:10;display:flex;align-items:center;gap:6px}
+  .chapters button{display:flex;align-items:center;gap:8px;border:0;cursor:pointer;background:rgba(255,255,255,.9);
+    backdrop-filter:blur(8px);padding:8px 12px 8px 8px;border-radius:6px;font:600 12px Inter,sans-serif;color:var(--ink);
+    box-shadow:0 1px 3px rgba(0,0,0,.06);transition:all .25s}
+  .chapters button em{font-style:normal;width:22px;height:22px;border-radius:4px;background:#f0f1f3;display:grid;place-items:center;font-size:10.5px;color:var(--muted);transition:all .25s}
+  .chapters button.on{background:var(--red);color:#fff}
+  .chapters button.on em{background:rgba(255,255,255,.22);color:#fff}
+  .progress{flex:1;height:3px;background:rgba(0,0,0,.07);border-radius:2px;margin-left:10px;overflow:hidden}
+  .progress i{display:block;height:100%;width:0;background:var(--red)}
+  .scrollhint{position:fixed;right:28px;bottom:70px;z-index:10;font-size:11.5px;font-weight:600;color:var(--muted);
+    display:flex;align-items:center;gap:8px;letter-spacing:.04em;text-transform:uppercase}
+  .scrollhint .mouse{width:16px;height:24px;border:1.6px solid var(--muted);border-radius:9px;position:relative}
+  .scrollhint .mouse::after{content:"";position:absolute;left:50%;top:5px;width:2px;height:5px;margin-left:-1px;background:var(--red);border-radius:1px;animation:wheel 1.6s infinite}
+  @keyframes wheel{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(8px)}}
+
+  /* hotspot pins */
+  .pin{position:fixed;z-index:5;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;display:flex;flex-direction:column;align-items:center;transition:opacity .3s}
+  .pin .tag{background:#fff;border-radius:20px;padding:6px 11px 6px 6px;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+    box-shadow:0 6px 18px -6px rgba(0,0,0,.25);white-space:nowrap}
+  .pin .tag i{width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-style:normal;font-size:14px;line-height:1}
+  .pin .stem{width:1.5px;height:26px;background:linear-gradient(#fff,rgba(255,255,255,.3))}
+  .pin .dot{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 rgba(227,6,19,.5);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(227,6,19,.45)}70%{box-shadow:0 0 0 12px rgba(227,6,19,0)}100%{box-shadow:0 0 0 0 rgba(227,6,19,0)}}
+  .pin.active .tag{background:var(--red);color:#fff}
+  .pin.active .tag i{background:#fff;color:var(--red)}
+
+  .loader{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;transition:opacity .8s}
+  .loader div{display:flex;flex-direction:column;align-items:center;gap:14px;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+  .loader .bar{width:140px;height:3px;background:#e2e4e8;border-radius:2px;overflow:hidden}
+  .loader .bar i{display:block;height:100%;width:40%;background:var(--red);animation:load 1s infinite ease-in-out}
+  @keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+
+  @media (max-width:860px){
+    nav,.lang,.scrollhint{display:none}
+    header{padding:12px 16px}
+    .card{left:16px;right:16px;width:auto;bottom:74px;padding:18px}
+    .card h1{font-size:22px}
+    .card p{font-size:13px}
+    .stats{display:none}
+    .chapters{left:16px;right:16px;bottom:16px;overflow-x:auto}
+    .chapters button span{display:none}
+    .chapters button{padding:8px}
+    .pin .tag span{display:none}
+    .pin .tag{padding:6px}
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="loader" id="loader"><div><span>Building the city</span><span class="bar"><i></i></span></div></div>
+
+<header>
+  <a class="logo" href="#"><i>H</i>Halden</a>
+  <nav><a href="#">Services</a><a href="#">Industries</a><a href="#">Locations</a><a href="#">Careers</a><a href="#">About</a></nav>
+  <div class="hdr-cta"><span class="lang">EN</span><a class="btn" href="#">Get a quote →</a></div>
+</header>
+
+<div class="card" id="card">
+  <div id="cardInner">
+    <span class="eyebrow" id="eyebrow">Road freight</span>
+    <h1 id="title">Halden – your forwarding company for transport &amp; logistics</h1>
+    <p id="text">Full and part loads across Europe, every day. Our own fleet, our own hubs and one contact person from pickup to delivery.</p>
+    <div class="row"><a class="btn" href="#" id="b1">Request a quote</a><a class="btn ghost" href="#" id="b2">Our services</a></div>
+    <div class="stats"><div><b id="s1">1,450</b><span id="s1l">Trucks on the road</span></div><div><b id="s2">38</b><span id="s2l">Hubs in Europe</span></div><div><b id="s3">24/7</b><span id="s3l">Tracking</span></div></div>
+  </div>
+</div>
+
+<div class="chapters" id="chapters"></div>
+<div class="scrollhint"><span class="mouse"></span>Scroll to explore</div>
+<div id="pins"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+/* ==========================================================
+   CONFIG — change the brand name and colour here
+   ========================================================== */
+const BRAND = 'Halden';
+const RED = 0xe30613;
+
+const STOPS = [
+  { key:'Road', pos:[0,0],    zoom:1.05, az:45, el:34, pin:[0,13,-6],
+    eyebrow:'Road freight', title:`${BRAND} – your forwarding company for transport & logistics`,
+    text:'Full and part loads across Europe, every day. Our own fleet, our own hubs and one contact person from pickup to delivery.',
+    b1:'Request a quote', b2:'Our services', stats:[['1,450','Trucks on the road'],['38','Hubs in Europe'],['24/7','Tracking']] },
+  { key:'Warehouse', pos:[95,-6], zoom:1.25, az:40, el:38, pin:[95,10,-6],
+    eyebrow:'Contract logistics', title:'Warehousing that thinks one shelf ahead',
+    text:'420,000 m² of storage with pick, pack, kitting and returns. Your stock is visible to the pallet, live, at any hour.',
+    b1:'Book storage', b2:'See locations', stats:[['420k','m² storage'],['99.8%','Pick accuracy'],['Same-day','Dispatch']] },
+  { key:'Rail', pos:[192,0], zoom:1.0, az:50, el:33, pin:[190,16,0],
+    eyebrow:'Intermodal rail', title:'Rail across the continent, road for the last mile',
+    text:'Daily block trains between the major ports and inland terminals. Lower CO₂ per tonne, with the same single booking.',
+    b1:'Rail schedules', b2:'Carbon calculator', stats:[['120','Trains a week'],['–70%','CO₂ vs road'],['14','Terminals']] },
+  { key:'Sea', pos:[285,32], zoom:0.92, az:42, el:36, pin:[280,18,32],
+    eyebrow:'Sea freight', title:'From the quay to your door, in one handover',
+    text:'FCL and LCL to every major port. Customs, drayage and storage are handled by the same team that books the ship.',
+    b1:'Ship a container', b2:'Port network', stats:[['60k','TEU a year'],['200+','Ports'],['1','Contact person']] },
+  { key:'Air', pos:[400,-26], zoom:0.95, az:48, el:35, pin:[400,12,-8],
+    eyebrow:'Air freight', title:'When it has to be there tomorrow',
+    text:'Charter and consolidated air cargo with priority handling. Door-to-door in 24 to 72 hours, worldwide.',
+    b1:'Urgent shipment', b2:'Air services', stats:[['24h','Express'],['90','Countries'],['Charter','On demand']] },
+  { key:'About', pos:[500,14], zoom:1.05, az:44, el:32, pin:[500,26,18],
+    eyebrow:'About us', title:'Family-run since 1928. Still moving forward.',
+    text:'3,200 people in 14 countries who take care of your goods as if they were their own. Come and work with us.',
+    b1:'Careers', b2:'Our story', stats:[['3,200','Employees'],['14','Countries'],['1928','Founded']] },
+];
+
+/* ==========================================================
+   RENDERER / CAMERA
+   ========================================================== */
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf2f3f5);
+const VIEW = 56;
+const cam = new THREE.OrthographicCamera(-1,1,1,-1,1,800);
+
+function resize(){
+  const w = innerWidth, h = innerHeight, a = w/h, s = VIEW/2;
+  renderer.setSize(w,h,false);
+  cam.left=-s*a; cam.right=s*a; cam.top=s; cam.bottom=-s;
+  cam.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd4d8de, 0.78));
+const sun = new THREE.DirectionalLight(0xffffff, 0.58);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+const sc = sun.shadow.camera; sc.left=-90; sc.right=90; sc.top=90; sc.bottom=-90; sc.near=1; sc.far=400;
+sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02;
+scene.add(sun, sun.target);
+
+/* ==========================================================
+   HELPERS
+   ========================================================== */
+const matCache = {};
+const M = (c, flat) => matCache[c+(flat?'f':'')] ||= new THREE.MeshLambertMaterial({ color:c, flatShading:!!flat });
+const C = { ground:0xeceef1, pad:0xe3e5e9, road:0xd3d6db, white:0xffffff, wall:0xdfe2e6, roof:0xf7f8f9,
+  dark:0x34373c, glass:0x2b2f35, steel:0xa7acb3, rail:0x7d838b, gravel:0xd0d3d8, tree:0x8fd3b4, tree2:0x7cc7a5,
+  trunk:0x9aa0a6, beige:0xe8d6b0, beige2:0xd9c39a, water:0x9fcbe0, gold:0xd8c8a4 };
+
+function box(w,h,d,c,x=0,y=0,z=0,parent=scene,shadow=true){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), Array.isArray(c)?c:(c.isMaterial?c:M(c)));
+  m.position.set(x, y+h/2, z);
+  m.castShadow = shadow; m.receiveShadow = true;
+  parent.add(m); return m;
+}
+function grp(x=0,y=0,z=0,parent=scene){ const g=new THREE.Group(); g.position.set(x,y,z); parent.add(g); return g; }
+
+function textTex(txt, w, h, bg, fg, size, align='center'){
+  const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
+  const g = cv.getContext('2d');
+  g.fillStyle = bg; g.fillRect(0,0,w,h);
+  g.fillStyle = fg; g.font = `italic 800 ${size}px Inter, Arial, sans-serif`;
+  g.textAlign = align; g.textBaseline = 'middle';
+  g.fillText(txt, align==='center'?w/2:w*0.08, h/2+2);
+  const t = new THREE.CanvasTexture(cv); t.anisotropy = 8; return t;
+}
+const brandMat = new THREE.MeshLambertMaterial({ map:textTex(BRAND,512,128,'#e30613','#ffffff',72) });
+const brandWide = new THREE.MeshLambertMaterial({ map:textTex(BRAND,1024,96,'#e30613','#ffffff',62) });
+const brandTail = new THREE.MeshLambertMaterial({ map:textTex(BRAND[0],128,128,'#e30613','#ffffff',90) });
+
+/* polyline path with arc-length lookup */
+class Path{
+  constructor(pts, closed=true){
+    this.p = pts.map(a=>new THREE.Vector2(a[0],a[1]));
+    if(closed) this.p.push(this.p[0].clone());
+    this.L=[0];
+    for(let i=1;i<this.p.length;i++) this.L.push(this.L[i-1]+this.p[i].distanceTo(this.p[i-1]));
+    this.total=this.L[this.L.length-1];
+  }
+  at(d){
+    d=((d%this.total)+this.total)%this.total;
+    let i=1; while(this.L[i]<d) i++;
+    const a=this.p[i-1], b=this.p[i], t=(d-this.L[i-1])/(this.L[i]-this.L[i-1]||1);
+    const dx=b.x-a.x, dz=b.y-a.y, len=Math.hypot(dx,dz)||1;
+    return { x:a.x+dx*t, z:a.y+dz*t, ang:Math.atan2(-dz,dx), nx:-dz/len, nz:dx/len };
+  }
+}
+function lerpAng(a,b,t){ let d=b-a; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2; return a+d*t; }
+
+function road(pts, width=6, dashes=true){
+  for(let i=1;i<pts.length;i++){
+    const [x1,z1]=pts[i-1],[x2,z2]=pts[i];
+    const len=Math.hypot(x2-x1,z2-z1), ang=Math.atan2(-(z2-z1),x2-x1);
+    const r=box(len+width,0.06,width,C.road,(x1+x2)/2,0.06,(z1+z2)/2,scene,false); r.rotation.y=ang;
+    if(dashes) for(let s=4;s<len-2;s+=6){
+      const t=s/len; const d=box(2.6,0.02,0.22,C.white,x1+(x2-x1)*t,0.13,z1+(z2-z1)*t,scene,false); d.rotation.y=ang;
+    }
+  }
+}
+
+function tree(x,z,s=1){
+  const g=grp(x,0,z);
+  const tr=new THREE.Mesh(new THREE.CylinderGeometry(0.16*s,0.2*s,1.4*s,6),M(C.trunk)); tr.position.y=0.7*s; tr.castShadow=true; g.add(tr);
+  const cr=new THREE.Mesh(new THREE.IcosahedronGeometry(1.25*s,0),M(Math.random()<.5?C.tree:C.tree2,true));
+  cr.scale.set(1,1.35,1); cr.position.y=2.6*s; cr.rotation.y=Math.random()*3; cr.castShadow=true; g.add(cr);
+  return g;
+}
+function trees(list){ list.forEach(([x,z,s])=>tree(x,z,s||0.9+Math.random()*0.4)); }
+
+/* ---------- vehicles ---------- */
+function truck(parent=scene){
+  const g=new THREE.Group(); parent.add(g);
+  const red=M(RED);
+  box(7.4,2.7,2.4,[red,red,M(0xf4f4f4),red,brandMat,brandMat],-1.2,0.8,0,g);
+  box(7.2,0.25,2.0,C.dark,-1.2,0.55,0,g);
+  box(2.2,2.7,2.35,RED,3.55,0.55,0,g);
+  box(0.12,0.9,2.0,C.glass,4.68,2.0,0,g);
+  box(0.9,0.55,2.36,C.white,3.4,3.05,0,g);
+  [[-3.8],[-2.6],[2.0],[3.9]].forEach(([x])=>{ box(0.9,0.9,0.4,C.dark,x,0.1,1.1,g); box(0.9,0.9,0.4,C.dark,x,0.1,-1.1,g); });
+  return g;
+}
+function forklift(parent){
+  const g=new THREE.Group(); parent.add(g);
+  box(1.8,1.1,1.3,RED,0,0.3,0,g);
+  box(0.9,0.9,1.2,C.dark,-0.3,1.4,0,g);
+  box(0.15,2.8,1.1,C.steel,1.0,0.3,0,g);
+  const fork=grp(1.5,0.4,0,g); box(1.0,0.1,1.0,C.steel,0,0,0,fork); box(1.0,0.8,1.0,C.beige,0,0.1,0,fork);
+  g.userData.fork=fork; return g;
+}
+function container(len,c,parent,x,y,z){
+  const m=box(len,2.5,2.4,c,x,y,z,parent);
+  if(c===RED && len>5){ m.material=[M(RED),M(RED),M(RED),M(RED),brandMat,brandMat]; }
+  return m;
+}
+const CCOL=[RED,C.white,0xb8bdc4,0x8d949c,RED,0xcfd3d8];
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+function plane(parent=scene){
+  const g=new THREE.Group(); parent.add(g);
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,15,14),M(RED)); body.rotation.z=Math.PI/2; body.castShadow=true; g.add(body);
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(1.1,3.2,14),M(RED)); nose.rotation.z=-Math.PI/2; nose.position.x=9.1; nose.castShadow=true; g.add(nose);
+  const tail=new THREE.Mesh(new THREE.ConeGeometry(1.1,3.6,14),M(RED)); tail.rotation.z=Math.PI/2; tail.position.x=-9.3; tail.castShadow=true; g.add(tail);
+  box(0.6,0.35,2.24,C.glass,8.3,0.25,0,g);
+  box(12,0.3,2.25,C.white,0.5,-0.2,0,g,false);
+  const w=box(4.2,0.28,20,C.white,0.2,-0.4,0,g);
+  box(3.2,0.3,7,C.white,-9.3,0.4,0,g);
+  box(3.2,3.8,0.3,[M(RED),M(RED),M(RED),M(RED),brandTail,brandTail],-9.4,0.6,0,g);
+  [-5,5].forEach(z=>{ const e=new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.6,2.6,10),M(C.white)); e.rotation.z=Math.PI/2; e.position.set(1.4,-1.0,z); e.castShadow=true; g.add(e); });
+  return g;
+}
+
+function ship(parent=scene, len=30){
+  const g=new THREE.Group(); parent.add(g);
+  box(len,3.2,8,RED,0,-1.2,0,g);
+  box(len,0.6,8.05,C.dark,0,-1.6,0,g,false);
+  const bow=box(5.66,3.2,5.66,RED,len/2,-1.2,0,g); bow.rotation.y=Math.PI/4; bow.scale.set(1,1,1);
+  box(len+0.2,0.25,8.2,C.white,0,1.8,0,g,false);
+  box(4,6,7,C.white,-len/2+3,2,0,g);
+  box(4.1,0.7,7.1,C.glass,-len/2+3,6.3,0,g);
+  box(1,2.4,1,RED,-len/2+2.5,8,0,g);
+  for(let x=-len/2+7;x<len/2-1;x+=2.7) for(let z=-2.6;z<=2.6;z+=2.6){
+    const h=1+Math.floor(Math.random()*3);
+    for(let k=0;k<h;k++) box(2.5,2.3,2.4,pick(CCOL),x,2+k*2.35,z,g);
+  }
+  return g;
+}
+
+/* ==========================================================
+   WORLD
+   ========================================================== */
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(1400,700),M(C.ground));
+ground.rotation.x=-Math.PI/2; ground.position.set(250,0,0); ground.receiveShadow=true; scene.add(ground);
+
+const movers=[];   // things updated every frame: fn(t,dt)
+
+/* ---------- 1. HUB / DEPOT ---------- */
+box(84,0.05,58,C.pad,0,0,0,scene,false);
+(function hub(){
+  const hall=grp(0,0,-7);
+  box(46,9,20,C.wall,0,0,0,hall);
+  box(46.6,0.6,20.6,C.roof,0,9,0,hall);
+  for(let x=-18;x<=18;x+=6) box(3.5,0.5,14,0xe9f0f6,x,9.6,0,hall);
+  box(46.2,2.8,0.3,brandWide,0,5.4,10.1,hall);
+  for(let i=0;i<8;i++){ const x=-19.25+i*5.5; box(3.6,4.2,0.2,0xbfc4ca,x,0.2,10.05,hall); box(4.4,0.35,1.6,C.dark,x,4.6,10.8,hall); }
+  box(1,9,20.2,RED,-23.2,0,0,hall);
+  // office annex
+  const off=grp(-31,0,-4);
+  box(10,7,12,C.white,0,0,0,off);
+  for(let y=1.2;y<6;y+=2.2) box(10.05,1.1,12.05,C.glass,0,y,0,off,false);
+  box(10.4,0.5,12.4,RED,0,7,0,off);
+  // docked trucks (rear to the dock, heading +z)
+  [-13.75,-8.25,2.75,8.25].forEach(x=>{ const t=truck(); t.position.set(x,0,10.3); t.rotation.y=-Math.PI/2; });
+  // parked trailers
+  for(let i=0;i<4;i++){ const t=box(7.4,2.7,2.4,[M(RED),M(RED),M(0xf4f4f4),M(RED),brandMat,brandMat],22+i*0, 0.8, -2+i*0); t.visible=false; }
+  [[28,-14],[28,-10],[28,-6]].forEach(([x,z])=>{ box(7.4,2.7,2.4,[M(RED),M(RED),M(0xf4f4f4),M(RED),brandMat,brandMat],x,0.8,z); box(7,0.6,2,C.dark,x,0.2,z,scene,false); });
+  // parking lines
+  for(let i=0;i<9;i++) box(0.18,0.02,6,C.white,-34+i*3,0.06,14,scene,false);
+  [[-36,15],[-32,16],[-28,15]].forEach(()=>{});
+  // cars
+  [[-33.5,14,0xffffff],[-27.5,14,0x9aa0a6],[-21.5,14,0x34373c],[-15.5,14,0xffffff]].forEach(([x,z,c])=>{ const g=grp(x,0,z); box(1.9,0.9,4,c,0,0.25,0,g); box(1.7,0.7,2.2,C.glass,0,1.1,-0.2,g); });
+  // fuel station
+  const fs=grp(30,0,10); box(8,0.4,6,C.white,0,4,0,fs); box(8.1,0.6,6.1,RED,0,4.3,0,fs,false); [-2.5,2.5].forEach(x=>box(0.4,4,0.4,C.steel,x,0,0,fs)); box(1,1.6,0.7,RED,0,0,0,fs);
+})();
+road([[-42,26],[42,26],[42,-28],[-42,-28],[-42,26]],6);
+trees([[-46,-34],[-40,-36],[-34,-35],[-48,-20],[-49,-8],[-48,4],[-48,16],[-47,32],[-38,33],[-28,33],[-18,32],[-8,33],[2,32],[12,33],[46,32],[48,18],[48,8],[47,-4],[47,-16],[20,-35],[10,-36],[0,-35],[-10,-36],[-22,-35]]);
+
+const hubLoop=new Path([[-42,26],[42,26],[42,-28],[-42,-28]]);
+[0,60,150].forEach((off,i)=>{
+  const t=truck(); let ang=0;
+  movers.push((time)=>{ const p=hubLoop.at(off+time*7); const o=1.6; t.position.set(p.x+p.nx*o,0,p.z+p.nz*o); ang=lerpAng(ang,p.ang,0.12); t.rotation.y=ang; });
+});
+
+/* ---------- main road network ---------- */
+const mainPts=[[42,-28],[150,-28],[335,-28],[335,6],[470,6],[520,6]];
+road(mainPts,7);
+road([[120,-28],[120,-6]],6,false);
+const mainPath=new Path([...mainPts,...mainPts.slice(1,-1).reverse()]);
+[0,130,260,400,560].forEach(off=>{
+  const t=truck(); let ang=0;
+  movers.push((time)=>{ const p=mainPath.at(off+time*9); t.position.set(p.x+p.nx*1.8,0,p.z+p.nz*1.8); ang=lerpAng(ang,p.ang,0.14); t.rotation.y=ang; });
+});
+
+/* ---------- 2. WAREHOUSE (cutaway) ---------- */
+(function warehouse(){
+  const W=grp(95,0,-6);
+  box(52,0.35,32,0xf7f7f8,0,0,0,W);
+  box(52,9,0.6,C.wall,0,0,-16,W);         // back wall
+  box(0.6,9,32,C.wall,-26,0,0,W);         // left wall
+  box(52.4,0.9,0.8,RED,0,9,-16,W);
+  box(0.8,0.9,32.4,RED,-26,9,0,W);
+  box(52,0.5,0.4,C.wall,0,0.35,16,W,false);   // front curb (cut)
+  box(0.4,0.5,32,C.wall,26,0.35,0,W,false);
+  for(let x=-24;x<=24;x+=8){ box(0.5,9,0.5,C.steel,x,0,15.6,W); }
+  for(let z=-14;z<=14;z+=7){ box(0.5,9,0.5,C.steel,25.6,0,z,W); }
+  // floor markings
+  for(let z=-11;z<=13;z+=6) box(44,0.02,0.18,0xf2c94c,-1,0.36,z,W,false);
+  // racks
+  const rows=[-13.5,-8,-2.5,3,8.5];
+  rows.forEach(z=>{
+    for(let x=-22;x<=18;x+=4){
+      box(0.18,7.2,2.2,0x8b929a,x,0.35,z,W,false);
+      if(x<18) for(let lvl=0;lvl<3;lvl++){
+        const y=0.5+lvl*2.4;
+        box(4,0.14,2.2,RED,x+2,y,z,W,false);
+        if(Math.random()<0.86){ const h=1.2+Math.random()*0.9; box(1.7,h,1.8,Math.random()<.7?C.beige:C.beige2,x+1.05,y+0.14,z,W); }
+        if(Math.random()<0.86){ const h=1.2+Math.random()*0.9; box(1.7,h,1.8,Math.random()<.7?C.beige:C.beige2,x+2.95,y+0.14,z,W); }
+      }
+    }
+  });
+  // forklifts in aisles
+  [-10.75,-5.25,0.25,5.75,11.75].forEach((z,i)=>{
+    const f=forklift(W); f.position.set(0,0.35,z);
+    const sp=0.25+Math.random()*0.2, ph=Math.random()*6;
+    movers.push((t)=>{ const s=Math.sin(t*sp+ph); f.position.x=s*17; f.rotation.y=Math.cos(t*sp+ph)>0?0:Math.PI; f.userData.fork.position.y=0.4+Math.max(0,Math.sin(t*0.9+ph))*2.6; });
+  });
+  // pallets near dock
+  for(let i=0;i<6;i++) box(1.8,1.4,1.8,C.beige,20,0.35,-13+i*2.4,W);
+  // dock trucks on the right
+  [-9,0,9].forEach(z=>{ const t=truck(); t.position.set(95+33,0,-6+z); t.rotation.y=0; });
+})();
+trees([[66,14],[72,16],[80,15],[110,16],[124,14],[66,-26],[76,-24],[100,-24],[130,-20],[64,0],[64,-12]]);
+
+/* ---------- 3. RAIL YARD ---------- */
+const TRACKS=[-12,-6,0,6,12];
+TRACKS.forEach(z=>{
+  box(210,0.12,3.2,C.gravel,230,0,z,scene,false);
+  for(let x=126;x<334;x+=1.6) box(0.35,0.06,2.6,0xa1958a,x,0.12,z,scene,false);
+  box(210,0.18,0.18,C.rail,230,0.18,z-0.72,scene,false);
+  box(210,0.18,0.18,C.rail,230,0.18,z+0.72,scene,false);
+});
+function train(n, parent=scene){
+  const g=new THREE.Group(); parent.add(g);
+  const loco=grp(0,0,0,g);
+  box(8,3.4,2.7,RED,0,0.5,0,loco); box(8.1,0.8,2.75,C.white,0,1.6,0,loco,false);
+  box(0.12,1,2.2,C.glass,4.02,2.6,0,loco); box(5,0.5,2,C.dark,0,3.9,0,loco);
+  for(let i=0;i<n;i++){
+    const w=grp(-9-i*7,0,0,g);
+    box(6.6,0.5,2.5,C.dark,0,0.45,0,w);
+    if(Math.random()<0.88) container(6.2,pick(CCOL),w,0,0.95,0);
+    if(Math.random()<0.4) container(6.2,pick(CCOL),w,0,3.47,0);
+  }
+  return g;
+}
+[[ -12, 7, 1],[ 12, 5, -1]].forEach(([z,sp,dir])=>{
+  const tr=train(9); tr.position.set(dir>0?140:300,0,z); tr.rotation.y=dir>0?0:Math.PI;
+  const len=75;
+  movers.push((t,dt)=>{ tr.position.x+=sp*dir*dt; if(dir>0&&tr.position.x-len>335) tr.position.x=110; if(dir<0&&tr.position.x+len<120) tr.position.x=350; });
+});
+[[0,175],[6,215],[-6,160]].forEach(([z,x])=>{ const tr=train(6); tr.position.set(x,0,z); });
+
+(function gantry(){
+  const G=grp(190,0,0);
+  [-18,18].forEach(z=>{
+    [-6,6].forEach(x=>{ box(1,14,1,RED,x,0,z,G); });
+    box(13,1,1.2,RED,0,13,z,G);
+    box(14,0.7,2.4,RED,0,0,z,G);
+  });
+  [-6,6].forEach(x=>box(1.1,1.4,38,RED,x,13.4,0,G));
+  box(13,0.4,1,RED,0,6,-18,G); box(13,0.4,1,RED,0,6,18,G);
+  const trolley=grp(0,14.8,0,G); box(13.5,1.4,3,0xb8040f,0,0,0,trolley); box(3,1.6,2.6,C.white,0,1.4,0,trolley);
+  const cable=box(0.12,1,0.12,C.dark,0,0,0,trolley,false);
+  const spreader=grp(0,0,0,trolley); box(6.6,0.4,2.5,C.dark,0,0,0,spreader); const ctr=container(6.2,RED,spreader,0,-2.5,0);
+  let phase=0;
+  movers.push((t)=>{
+    const c=(t*0.12)%1;          // full cycle
+    const zA=-12, zB=12;
+    let z, drop;
+    if(c<0.2){ z=zA; drop=Math.sin(c/0.2*Math.PI)*9; }
+    else if(c<0.5){ z=zA+(zB-zA)*easeIO((c-0.2)/0.3); drop=0; }
+    else if(c<0.7){ z=zB; drop=Math.sin((c-0.5)/0.2*Math.PI)*9; }
+    else { z=zB+(zA-zB)*easeIO((c-0.7)/0.3); drop=0; }
+    trolley.position.z=z;
+    spreader.position.y=-2-drop;
+    cable.scale.y=2+drop; cable.position.y=-(2+drop)/2-0.5;
+  });
+})();
+function easeIO(x){ return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2; }
+// container stacks along rail
+for(let x=150;x<235;x+=7) for(let k=0;k<1+Math.floor(Math.random()*3);k++){ container(6.4,pick(CCOL),scene,x,k*2.55,20); if(Math.random()<.6) container(6.4,pick(CCOL),scene,x,k*2.55,22.6); }
+trees([[140,-22],[150,-20],[160,-22],[230,-20],[244,-22],[132,22],[140,24]]);
+
+/* ---------- 4. PORT ---------- */
+const water=new THREE.Mesh(new THREE.PlaneGeometry(150,90),M(C.water)); water.rotation.x=-Math.PI/2; water.position.set(295,0.04,76); water.receiveShadow=true; scene.add(water);
+// ripples
+for(let i=0;i<60;i++){ const r=box(2+Math.random()*4,0.02,0.15,0xc6e1ee,230+Math.random()*140,0.06,36+Math.random()*80,scene,false); }
+box(150,1,2,C.white,295,0,30.5,scene,false);    // quay edge
+box(110,0.06,14,C.pad,290,0,22.5,scene,false);  // apron
+for(let x=248;x<330;x+=2.7) for(let z=18;z<=23;z+=2.6){
+  const h=Math.floor(Math.random()*4);
+  for(let k=0;k<h;k++) box(2.5,2.4,2.4,pick(CCOL),x,k*2.45,z);
+}
+const docked=ship(scene,34); docked.position.set(282,0,38);
+movers.push((t)=>{ docked.position.y=Math.sin(t*0.8)*0.12; docked.rotation.x=Math.sin(t*0.6)*0.006; });
+[268,296].forEach((x,i)=>{
+  const S=grp(x,0,0);
+  [-3,3].forEach(dx=>{ box(0.9,16,0.9,RED,dx,0,26,S); box(0.9,16,0.9,RED,dx,0,31.5,S); });
+  box(7,0.8,0.9,RED,0,8,26,S); box(7,0.8,0.9,RED,0,8,31.5,S);
+  [-3,3].forEach(dx=>box(0.8,1.2,36,RED,dx,16,34,S));
+  box(7,1.2,0.8,RED,0,16,16.4,S); box(6.2,2,4,C.white,0,17.2,24,S);
+  const tro=grp(0,15.6,40,S); box(4,0.8,2.2,0xb8040f,0,0,0,tro);
+  const cab=box(0.1,1,0.1,C.dark,0,0,0,tro,false);
+  const sp=grp(0,0,0,tro); box(2.6,0.3,2.4,C.dark,0,0,0,sp); box(2.5,2.4,2.4,pick(CCOL),0,-2.5,0,sp);
+  movers.push((t)=>{ const c=(t*0.1+i*0.33)%1; const z=c<.5?28+easeIO(c*2)*14:42-easeIO((c-.5)*2)*14; const d=Math.abs(Math.sin(c*Math.PI*2))*7; tro.position.z=z; sp.position.y=-1-d; cab.scale.y=1+d; cab.position.y=-(1+d)/2; });
+});
+const cruise=ship(scene,26);
+const sea=new Path([[230,68],[350,68],[365,90],[220,96]]);
+let sAng=0; movers.push((t)=>{ const p=sea.at(t*3.2); cruise.position.set(p.x,Math.sin(t)*0.15,p.z); sAng=lerpAng(sAng,p.ang,0.02); cruise.rotation.y=sAng; });
+// lighthouse + buoys
+const lh=grp(352,0,40); for(let k=0;k<5;k++) box(2.2-k*0.2,1.6,2.2-k*0.2,k%2?C.white:RED,0,k*1.6,0,lh); box(1.4,1.2,1.4,0xfff2b0,0,8,0,lh);
+[[250,58],[270,62],[320,60]].forEach(([x,z])=>{ const b=new THREE.Mesh(new THREE.ConeGeometry(0.6,1.6,8),M(RED)); b.position.set(x,0.8,z); b.castShadow=true; scene.add(b); movers.push((t)=>{ b.position.y=0.8+Math.sin(t*1.5+x)*0.15; }); });
+
+/* ---------- 5. AIRPORT ---------- */
+box(130,0.07,12,0xc6cacf,402,0,-52,scene,false);   // runway
+for(let x=345;x<465;x+=8) box(4,0.02,0.4,C.white,x,0.08,-52,scene,false);
+[-56.5,-47.5].forEach(z=>box(130,0.02,0.25,C.white,402,0.08,z,scene,false));
+box(84,0.06,26,0xe0e3e7,400,0,-32,scene,false);    // apron
+box(6,0.06,8,0xd3d6db,360,0,-43,scene,false);
+(function terminal(){
+  const T=grp(400,0,-12);
+  box(50,7,10,C.white,0,0,0,T);
+  box(50.1,2.6,10.1,C.glass,0,2.2,0,T,false);
+  box(50.6,0.8,10.6,RED,0,7,0,T);
+  box(20,2.2,0.3,brandWide,0,4.8,-5.2,T);
+  const tw=grp(-30,0,-2,T); box(3,16,3,C.white,0,0,0,tw); box(5.6,3,5.6,C.glass,0,16,0,tw); box(6,0.6,6,RED,0,19,0,tw);
+  [[ -12],[2],[14]].forEach(([x])=>box(2,3,8,C.wall,x,2,-9,T));
+  const H=grp(445,0,-32); box(18,9,16,C.wall,0,0,0,H); box(18.4,0.8,16.4,RED,0,9,0,H); box(14,7,0.2,0xbfc4ca,0,0,8.05,H);
+  scene.add(H);
+})();
+[[378,-34],[410,-34]].forEach(([x,z])=>{ const p=plane(); p.position.set(x,2.2,z); p.rotation.y=-Math.PI/2; });
+// service vehicles
+const tug=grp(0,0,0); box(2.5,1,1.5,0xf2c94c,0,0.2,0,tug); box(1.2,1,1.4,C.glass,-0.4,1.2,0,tug);
+const tugPath=new Path([[365,-38],[430,-38],[430,-20],[365,-20]]); let tAng=0;
+movers.push((t)=>{ const p=tugPath.at(t*5); tug.position.set(p.x,0,p.z); tAng=lerpAng(tAng,p.ang,.15); tug.rotation.y=tAng; });
+const jet=plane(); const JET_T=20;
+movers.push((t)=>{
+  const s=t%JET_T, u=Math.max(0,Math.min(1,(s-2)/13));
+  const x=342+190*u*u; const lift=Math.max(0,x-415);
+  jet.position.set(x,2.2+lift*0.32,-52);
+  jet.rotation.z=lift>0?Math.min(0.2,lift*0.02):0;
+  jet.visible = s>0.4 && s<JET_T-0.4;
+});
+trees([[350,-8],[356,-6],[362,-8],[452,-6],[458,-10],[350,-66],[370,-68],[420,-68],[448,-66]]);
+
+/* ---------- 6. CITY / HQ ---------- */
+function tower(x,z,w,d,floors,opts={}){
+  const g=grp(x,0,z); let y=0;
+  for(let f=0;f<floors;f++){ box(w,1.25,d,opts.dark||C.glass,0,y,0,g); box(w+0.3,0.45,d+0.3,opts.band||C.gold,0,y+1.25,0,g); y+=1.7; }
+  box(w+0.3,1,d+0.3,opts.top||C.white,0,y,0,g);
+  if(opts.redFin) box(1.2,y+2,d+0.6,RED,w/2,0,0,g);
+  if(opts.antenna){ box(0.2,5,0.2,C.steel,w/4,y+1,0,g); box(1.6,1.2,1.6,C.steel,-w/4,y+1,-d/5,g); }
+  return g;
+}
+box(80,0.05,50,C.pad,500,0,18,scene,false);
+tower(488,14,8,8,12,{antenna:true});
+tower(500,4,9,7,8,{redFin:true});
+tower(512,16,10,10,16,{antenna:true,band:C.gold});
+tower(496,28,7,7,6,{dark:0x3b3f45});
+tower(520,2,6,6,9,{top:RED});
+(function hq(){ const g=grp(476,0,30); box(14,6,10,C.white,0,0,0,g); box(14.05,1.4,10.05,C.glass,0,1.8,0,g,false); box(14.05,1.4,10.05,C.glass,0,4.0,0,g,false); box(14.4,0.6,10.4,RED,0,6,0,g); box(10,1.6,0.25,brandWide,0,6.6,5.2,g); })();
+trees([[470,6],[474,10],[466,14],[468,22],[484,40],[490,42],[498,40],[506,40],[514,36],[526,26],[530,14],[528,30],[462,30],[464,40]]);
+// mountains
+const mtn=[[430,-110,28],[465,-118,40],[505,-112,34],[545,-120,46],[585,-108,30],[395,-104,22],[620,-115,36]];
+mtn.forEach(([x,z,h])=>{
+  const m=new THREE.Mesh(new THREE.ConeGeometry(h*0.95,h,7),M(0xcfd3d9,true)); m.position.set(x,h/2,z); m.rotation.y=Math.random(); m.receiveShadow=true; scene.add(m);
+  const cap=new THREE.Mesh(new THREE.ConeGeometry(h*0.95*0.3,h*0.3,7),M(0xffffff,true)); cap.position.set(x,h*0.85+0.1,z); cap.rotation.y=m.rotation.y; scene.add(cap);
+});
+for(let i=0;i<40;i++) tree(420+Math.random()*200,-96+Math.random()*30,0.9+Math.random()*0.6);
+
+/* little houses scattered to fill gaps */
+[[60,-40],[66,-44],[250,-44],[258,-46],[300,-42],[150,40],[162,44],[-60,0],[-62,-14]].forEach(([x,z])=>{ const g=grp(x,0,z); box(4,2.6,4,C.white,0,0,0,g); const r=box(4.4,1.2,4.4,0xd9dce1,0,2.6,0,g); });
+
+/* ==========================================================
+   UI — chapters, pins, card
+   ========================================================== */
+const chaptersEl=document.getElementById('chapters');
+STOPS.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.innerHTML=`<em>0${i+1}</em><span>${s.key}</span>`;
+  b.onclick=()=>goTo(i);
+  chaptersEl.appendChild(b);
+});
+const prog=document.createElement('div'); prog.className='progress'; prog.innerHTML='<i></i>'; chaptersEl.appendChild(prog);
+const progBar=prog.firstChild;
+
+const pinsEl=document.getElementById('pins');
+const pins=STOPS.map((s,i)=>{
+  const d=document.createElement('div'); d.className='pin';
+  d.innerHTML=`<div class="tag"><i>+</i><span>${s.key}</span></div><div class="stem"></div><div class="dot"></div>`;
+  d.onclick=()=>goTo(i); pinsEl.appendChild(d);
+  return { el:d, v:new THREE.Vector3(...s.pin) };
+});
+
+function maxScroll(){ return document.documentElement.scrollHeight-innerHeight; }
+function goTo(i){ scrollTo({ top: i/(STOPS.length-1)*maxScroll(), behavior:'smooth' }); }
+
+let activeIdx=-1;
+const cardInner=document.getElementById('cardInner');
+function setCard(i){
+  if(i===activeIdx) return;
+  const first=activeIdx===-1; activeIdx=i;
+  [...chaptersEl.querySelectorAll('button')].forEach((b,k)=>b.classList.toggle('on',k===i));
+  pins.forEach((p,k)=>p.el.classList.toggle('active',k===i));
+  const s=STOPS[i];
+  const fill=()=>{
+    eyebrow.textContent=s.eyebrow; title.textContent=s.title; text.textContent=s.text; b1.textContent=s.b1; b2.textContent=s.b2;
+    [s1,s2,s3].forEach((e,k)=>e.textContent=s.stats[k][0]); [s1l,s2l,s3l].forEach((e,k)=>e.textContent=s.stats[k][1]);
+  };
+  if(first){ fill(); return; }
+  gsap.killTweensOf(cardInner.children);
+  gsap.to(cardInner.children,{ opacity:0, y:-8, duration:0.2, stagger:0.02, ease:'power2.in', onComplete:()=>{
+    fill(); gsap.fromTo(cardInner.children,{opacity:0,y:12},{opacity:1,y:0,duration:0.5,stagger:0.05,ease:'power3.out'});
+  }});
+}
+
+/* ==========================================================
+   CAMERA RIG — glides between stops on scroll
+   ========================================================== */
+const rig={ x:STOPS[0].pos[0], z:STOPS[0].pos[1], zoom:0.45, az:30, el:60 };
+const want={...rig};
+const intro={ k:1 };
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function smoothPlateau(t){ const a=Math.min(1,Math.max(0,(t-0.12)/0.76)); return a*a*a*(a*(a*6-15)+10); }
+function sample(p){
+  const f=p*(STOPS.length-1), i=Math.min(STOPS.length-2,Math.floor(f)), t=smoothPlateau(f-i);
+  const A=STOPS[i], B=STOPS[i+1];
+  // arc the camera: pull out (lower zoom) mid-flight for the "glide over the city" feel
+  const lift=Math.sin(t*Math.PI)*0.28;
+  return { x:A.pos[0]+(B.pos[0]-A.pos[0])*t, z:A.pos[1]+(B.pos[1]-A.pos[1])*t,
+    zoom:A.zoom+(B.zoom-A.zoom)*t-lift, az:A.az+(B.az-A.az)*t, el:A.el+(B.el-A.el)*t+lift*14,
+    idx:Math.round(f) };
+}
+
+const _right=new THREE.Vector3(), _tgt=new THREE.Vector3(), _v=new THREE.Vector3();
+function placeCamera(){
+  const az=THREE.MathUtils.degToRad(rig.az), el=THREE.MathUtils.degToRad(rig.el);
+  const D=260;
+  _tgt.set(rig.x,0,rig.z);
+  cam.position.set(rig.x+Math.sin(az)*Math.cos(el)*D, Math.sin(el)*D, rig.z+Math.cos(az)*Math.cos(el)*D);
+  cam.lookAt(_tgt);
+  cam.zoom=rig.zoom; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+  // shift scene right so the card on the left does not cover the focus
+  const shift = innerWidth>860 ? (VIEW*innerWidth/innerHeight)*0.13/rig.zoom : 0;
+  const lower = innerWidth>860 ? 0 : VIEW*0.16/rig.zoom;
+  _right.setFromMatrixColumn(cam.matrixWorld,0);
+  _v.setFromMatrixColumn(cam.matrixWorld,1);
+  cam.position.addScaledVector(_right,-shift).addScaledVector(_v,-lower);
+  cam.updateMatrixWorld();
+  sun.position.set(rig.x-60,120,rig.z+40); sun.target.position.set(rig.x,0,rig.z);
+}
+
+/* ==========================================================
+   LOOP
+   ========================================================== */
+const clock=new THREE.Clock(); let time=0;
+function frame(){
+  const dt=Math.min(clock.getDelta(),0.05); time+=dt;
+  const p=Math.min(1,Math.max(0,scrollY/maxScroll()));
+  const s=sample(p);
+  Object.assign(want,s);
+  const k=reduce?1:1-Math.exp(-dt*4.2);
+  rig.x+=(want.x-rig.x)*k; rig.z+=(want.z-rig.z)*k; rig.az+=(want.az-rig.az)*k;
+  rig.el+=(want.el-rig.el)*k; rig.zoom+=(want.zoom-rig.zoom)*k*(intro.k);
+  placeCamera();
+  movers.forEach(m=>m(time,dt));
+  setCard(s.idx);
+  progBar.style.width=(p*100)+'%';
+
+  // project pins
+  const w=innerWidth,h=innerHeight;
+  pins.forEach((pin,i)=>{
+    _v.copy(pin.v).project(cam);
+    const x=(_v.x*0.5+0.5)*w, y=(-_v.y*0.5+0.5)*h;
+    const on=x>-50&&x<w+50&&y>60&&y<h+20;
+    pin.el.style.left=x+'px'; pin.el.style.top=y+'px';
+    pin.el.style.opacity=on?(i===s.idx?1:0.85):0;
+    pin.el.style.pointerEvents=on?'auto':'none';
+  });
+
+  renderer.render(scene,cam);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(()=>{
+  frame();
+  const ld=document.getElementById('loader');
+  setTimeout(()=>{ ld.style.opacity=0; setTimeout(()=>ld.remove(),800); },250);
+  if(!reduce){
+    gsap.from('header',{y:-70,duration:0.9,ease:'power3.out',delay:0.4});
+    gsap.from('#card',{x:-40,opacity:0,duration:1,ease:'power3.out',delay:0.9});
+    gsap.from('#chapters > *',{y:20,opacity:0,stagger:0.06,duration:0.6,ease:'power3.out',delay:1.1});
+  }
+});
+</script>
+</body>
+</html>
